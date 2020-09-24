@@ -1,4 +1,6 @@
 var express = require('express');
+const tmi = require('tmi.js');
+
 var app = express();
 var path = require('path');
 
