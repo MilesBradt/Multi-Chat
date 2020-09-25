@@ -3,19 +3,15 @@ body {
     background-color: #0e0e10;
 }
 
-button {
+#button-div {
     margin-left: 5em;
 }
 
 #chat {
-    height: 800px;
-    width: 450px;
-}
-
-#chat-container {
     background-color: #0e0e10;
-    height: 800px;
-    width: 450px;
+    height: 700px;
+    width: 500px;
+    overflow-y: auto;
     float: left;
     font-size: 13px;
     margin-left: 5em;
@@ -27,8 +23,13 @@ button {
 
 .channelLines {
     color: #707070;
+    border-left: 0.3em solid #9147ff;
+    margin-left: 0.5em;
+    padding-left: 0.3em;
 }
 
 .chatLines {
-    padding-bottom: 0.7em;
+    padding-bottom: 1em;
+    margin-right: 1em;
+    margin-left: 0.5em;
 }
