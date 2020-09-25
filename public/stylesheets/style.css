@@ -7,6 +7,11 @@ button {
     margin-left: 5em;
 }
 
+#chat {
+    height: 800px;
+    width: 450px;
+}
+
 #chat-container {
     background-color: #0e0e10;
     height: 800px;
@@ -20,7 +25,10 @@ button {
     border-width: 0.1em;
 }
 
+.channelLines {
+    color: #707070;
+}
+
 .chatLines {
-    padding-top: 0.4em;
-    padding-bottom: 0.4em;
+    padding-bottom: 0.7em;
 }
