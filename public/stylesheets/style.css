@@ -1,8 +1,26 @@
 body { 
-    padding-top:50px; 
-    background-color: black;
+    padding-top: 50px; 
+    background-color: #0e0e10;
 }
 
-#chat {
-    color: white;
+button {
+    margin-left: 5em;
+}
+
+#chat-container {
+    background-color: #0e0e10;
+    height: 800px;
+    width: 450px;
+    float: left;
+    font-size: 13px;
+    margin-left: 5em;
+    margin-top: 1em;
+    border-style: solid;
+    border-color: #979799;
+    border-width: 0.1em;
+}
+
+.chatLines {
+    padding-top: 0.4em;
+    padding-bottom: 0.4em;
 }
