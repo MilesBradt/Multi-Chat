@@ -1,11 +1,13 @@
 const express = require('express');
 const tmi = require('tmi.js');
 const config = require('./config');
-const http = require('http');
-const WebSocket = require('ws');
-
 const app = express();
 const path = require('path');
+const http = require('http');
+const WebSocket = require('ws');
+const server = http.createServer(app);
+
+
 
 app.use(express.static('public'))
 
@@ -14,21 +16,27 @@ app.get('/', function (req, res) {
     res.sendFile(path.join(__dirname + '/index.html'));
 });
 
-app.listen(8080);
+server.listen(8080, () => console.log('Listening on port: 8080'));
+// console.log("HTML hosted at http://localhost:8080");
 
-console.log("HTML hosted at http://localhost:8080");
-
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ server:server });
 
 wss.on('connection', (ws) => {
     //connection is up, let's add a simple simple event
     client.on('message', (target, context, msg, self) => {
         const message = msg.trim();
         const channel = target.slice(1)
-        const username = context.username
+        const username = context['display-name']
+
+        const chatInfo = {
+            channel: channel,
+            username: username,
+            message: message,
+            color: context.color,
+            id: context['user-id']
+        }
     
-        ws.send("Channel: " + channel + " - " + username + ": " + message)
+        ws.send(JSON.stringify(chatInfo))
     })
     ws.on('message', (message) => {
         //log the received message and send it back to the client
@@ -38,10 +46,11 @@ wss.on('connection', (ws) => {
     //send immediatly a feedback to the incoming connection    
     ws.send('Hi there, I am a WebSocket server');
 });
+
 //start our server
-server.listen(process.env.PORT || 8000, () => {
-    console.log(`Websocket server started on port ${server.address().port}`);
-});
+// server.listen(process.env.PORT || 8000, () => {
+//     console.log(`Websocket server started on port ${server.address().port}`);
+// });
 
 const channels = config.channels;
 
@@ -74,7 +83,7 @@ function onMessageHandler(target, context, msg, self) {
     // Remove whitespace from chat message
     const message = msg.trim();
     const cleanTarget = target.slice(1)
-    const userName = context.username
+    const userName = context['display-name']
     const chatInfo = {
         channel: cleanTarget,
         username: userName,
@@ -82,9 +91,7 @@ function onMessageHandler(target, context, msg, self) {
     }
 
     // How tf do I get this to DOM?
-    console.log(chatInfo)
-
-
+    console.log(context)
 }
 
 // Called every time the bot connects to Twitch chat
