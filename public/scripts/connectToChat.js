@@ -7,9 +7,13 @@ function connectToChat() {
         console.log('Connected to WS Server')
     });
 
+    const chat = document.getElementById('chat');
+
     // Listen for messages
     socket.addEventListener('message', function (event) {
         const chatLog = JSON.parse(event.data);
+        
+        shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
         const divChannel = document.createElement("div")
         divChannel.id = "channelLine"
@@ -37,11 +41,9 @@ function connectToChat() {
         messageSpan.textContent = ": " + chatLog.message;
         divChat.appendChild(messageSpan)
 
-        shouldScroll = divChat.scrollTop + divChat.clientHeight === divChat.scrollHeight;
-
         if (!shouldScroll) {
-            scrollToBottom(divChat);
-          }
+            scrollToBottom();
+        }
 
         console.log('Message from server ', chatLog);
     });
@@ -52,5 +54,5 @@ function connectToChat() {
 }
 
 function scrollToBottom(divChat) {
-    divChat.scrollTop =divChat.scrollHeight;
-  }
+    chat.scrollTop = chat.scrollHeight;
+}
