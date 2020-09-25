@@ -1,27 +1,32 @@
-Chat = {
-    load: function () {
+function connectToChat() {
+    // Create WebSocket connection.
+    const socket = new WebSocket('ws://localhost:8080');
+
+    // Connection opened
+    socket.addEventListener('open', function (event) {
+
+        console.log('Connected to WS Server')
+    });
+
+    // Listen for messages
+    socket.addEventListener('message', function (event) {
+        const chatLog = JSON.parse(event.data);
+
+        // const usernameColor = document.getElementById("username");
+        // usernameColor.style.color = chatLog.color
+        var div = document.createElement("div");
+        document.getElementById("chat").appendChild(div);
+        div.id = chatLog.id;
+        div.textContent = chatLog.username
+        div.style.color = chatLog.color
+        // usernameColor.style.color = chatLog.color
+        // document.getElementById("chat").appendChild(usernameColor);
         
-        var socket = new ReconnectingWebSocket('wss://irc-ws.chat.twitch.tv', 'irc', { reconnectInterval: 3000 });
 
-        socket.onopen = function (data) {
-            socket.send('PASS blah\r\n');
-            socket.send('NICK justinfan12345\r\n');
-            socket.send('CAP REQ :twitch.tv/commands twitch.tv/tags\r\n');
-            socket.send('JOIN #' + "snowman" + '\r\n');
-        };
+        console.log('Message from server ', chatLog);
+    });
 
-        socket.onclose = function () {
-            
-        };
-
-        socket.onmessage = function (data) {
-            console.log(data)
-        };
-
+    const sendMessage = () => {
+        socket.send('Hello From Client1!');
     }
-
-};
-
-document.addEventListener("DOMContentLoaded", function (event) {
-    Chat.load();
-});
+}
