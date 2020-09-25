@@ -12,16 +12,11 @@ function connectToChat() {
     socket.addEventListener('message', function (event) {
         const chatLog = JSON.parse(event.data);
 
-        // const usernameColor = document.getElementById("username");
-        // usernameColor.style.color = chatLog.color
         var div = document.createElement("div");
         document.getElementById("chat").appendChild(div);
         div.id = chatLog.id;
         div.textContent = chatLog.username
         div.style.color = chatLog.color
-        // usernameColor.style.color = chatLog.color
-        // document.getElementById("chat").appendChild(usernameColor);
-        
 
         console.log('Message from server ', chatLog);
     });
