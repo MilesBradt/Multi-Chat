@@ -4,7 +4,6 @@ const config = require('./config');
 const http = require('http');
 const WebSocket = require('ws');
 
-
 const app = express();
 const path = require('path');
 
@@ -24,6 +23,13 @@ const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws) => {
     //connection is up, let's add a simple simple event
+    client.on('message', (target, context, msg, self) => {
+        const message = msg.trim();
+        const channel = target.slice(1)
+        const username = context.username
+    
+        ws.send("Channel: " + channel + " - " + username + ": " + message)
+    })
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
@@ -33,20 +39,19 @@ wss.on('connection', (ws) => {
     ws.send('Hi there, I am a WebSocket server');
 });
 //start our server
-server.listen(process.env.PORT || 8999, () => {
+server.listen(process.env.PORT || 8000, () => {
     console.log(`Websocket server started on port ${server.address().port}`);
 });
 
-const password = config.O_AUTH;
 const channels = config.channels;
 
 // Define configuration options
 const opts = {
-    identity: {
-        username: "Snowbottos",
-        password: password
-    },
-    channels: channels
+	connection: {
+		secure: true,
+		reconnect: true
+	},
+	channels: channels
 };
 
 // Create a client with Twitch options
@@ -71,7 +76,7 @@ function onMessageHandler(target, context, msg, self) {
     const cleanTarget = target.slice(1)
     const userName = context.username
     const chatInfo = {
-        chatname: cleanTarget,
+        channel: cleanTarget,
         username: userName,
         message: message
     }
