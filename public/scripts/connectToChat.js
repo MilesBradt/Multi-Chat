@@ -4,7 +4,6 @@ function connectToChat() {
 
     // Connection opened
     socket.addEventListener('open', function (event) {
-
         console.log('Connected to WS Server')
     });
 
@@ -12,11 +11,25 @@ function connectToChat() {
     socket.addEventListener('message', function (event) {
         const chatLog = JSON.parse(event.data);
 
-        var div = document.createElement("div");
+        const div = document.createElement("div")
+        div.id = "chatLine"
+        div.className = "chatLines"
         document.getElementById("chat").appendChild(div);
-        div.id = chatLog.id;
-        div.textContent = chatLog.username
-        div.style.color = chatLog.color
+
+        const usernameSpan = document.createElement("span");
+        usernameSpan.id = chatLog.id;
+        usernameSpan.textContent = chatLog.username;
+        usernameSpan.style.color = chatLog.color;
+        usernameSpan.style.fontWeight = "bold";
+        div.appendChild(usernameSpan)
+        console.log(usernameSpan)
+
+        const messageSpan = document.createElement("span");
+        messageSpan.className = "messages";
+        messageSpan.style.color = "#979799";
+        messageSpan.style.fontWeight = "normal";
+        messageSpan.textContent = ": " + chatLog.message;
+        div.appendChild(messageSpan)
 
         console.log('Message from server ', chatLog);
     });
