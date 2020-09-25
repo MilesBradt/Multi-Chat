@@ -37,6 +37,12 @@ function connectToChat() {
         messageSpan.textContent = ": " + chatLog.message;
         divChat.appendChild(messageSpan)
 
+        shouldScroll = divChat.scrollTop + divChat.clientHeight === divChat.scrollHeight;
+
+        if (!shouldScroll) {
+            scrollToBottom(divChat);
+          }
+
         console.log('Message from server ', chatLog);
     });
 
@@ -44,3 +50,7 @@ function connectToChat() {
         socket.send('Hello From Client1!');
     }
 }
+
+function scrollToBottom(divChat) {
+    divChat.scrollTop =divChat.scrollHeight;
+  }
