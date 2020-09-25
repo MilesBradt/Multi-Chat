@@ -1,7 +1,8 @@
 const config = {
     channels: [
         "Snowman",
-        "Summerheroes"
+        "Summerheroes",
+        "nospimi99"
     ]
 }
 
