@@ -1,10 +1,12 @@
-function connectToChat() {
+function connectToChat(channel) {
+
     // Create WebSocket connection.
     const socket = new WebSocket('ws://localhost:8080');
 
     // Connection opened
     socket.addEventListener('open', function (event) {
         console.log('Connected to WS Server')
+        socket.send(channel)
     });
 
     const chat = document.getElementById('chat');
@@ -12,7 +14,7 @@ function connectToChat() {
     // Listen for messages
     socket.addEventListener('message', function (event) {
         const chatLog = JSON.parse(event.data);
-        
+
         shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
         const divChannel = document.createElement("div")
@@ -48,9 +50,11 @@ function connectToChat() {
         console.log('Message from server ', chatLog);
     });
 
-    const sendMessage = () => {
-        socket.send('Hello From Client1!');
-    }
+    // const sendMessage = () => {
+    //     socket.send('Hello From Client1!');
+    // }
+
+
 }
 
 function scrollToBottom(divChat) {

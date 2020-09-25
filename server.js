@@ -7,8 +7,6 @@ const http = require('http');
 const WebSocket = require('ws');
 const server = http.createServer(app);
 
-
-
 app.use(express.static('public'))
 
 // viewed at http://localhost:8080
@@ -19,10 +17,31 @@ app.get('/', function (req, res) {
 server.listen(8080, () => console.log('Listening on port: 8080'));
 // console.log("HTML hosted at http://localhost:8080");
 
-const wss = new WebSocket.Server({ server:server });
+const wss = new WebSocket.Server({ server: server });
 
 wss.on('connection', (ws) => {
     //connection is up, let's add a simple simple event
+    const channels = [];
+
+    // Define configuration options
+    const opts = {
+        connection: {
+            secure: true,
+            reconnect: true
+        },
+        channels: channels
+    };
+
+    // Create a client with Twitch options
+    const client = new tmi.client(opts);
+
+    // Register Twitch event handlers (defined below)
+    client.on('message', onMessageHandler);
+    client.on('connected', onConnectedHandler);
+
+    // Connect to Twitch:
+    client.connect();
+
     client.on('message', (target, context, msg, self) => {
         const message = msg.trim();
         const channel = target.slice(1)
@@ -35,43 +54,21 @@ wss.on('connection', (ws) => {
             color: context.color,
             id: context['user-id']
         }
-    
+
         ws.send(JSON.stringify(chatInfo))
     })
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
+        opts.channels.push(message)
+        console.log(opts.channels)
         ws.send(`Hello, you sent -> ${message}`);
     });
     //send immediatly a feedback to the incoming connection    
     ws.send('Hi there, I am a WebSocket server');
 });
 
-//start our server
-// server.listen(process.env.PORT || 8000, () => {
-//     console.log(`Websocket server started on port ${server.address().port}`);
-// });
 
-const channels = config.channels;
-
-// Define configuration options
-const opts = {
-	connection: {
-		secure: true,
-		reconnect: true
-	},
-	channels: channels
-};
-
-// Create a client with Twitch options
-const client = new tmi.client(opts);
-
-// Register Twitch event handlers (defined below)
-client.on('message', onMessageHandler);
-client.on('connected', onConnectedHandler);
-
-// Connect to Twitch:
-client.connect();
 
 // Called every time a message comes in
 function onMessageHandler(target, context, msg, self) {
