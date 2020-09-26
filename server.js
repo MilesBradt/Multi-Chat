@@ -67,12 +67,14 @@ wss.on('connection', (ws) => {
             console.log(splitEmoteLocation)
             chatInfo.emotes.push({
                 "emoteId": id,
-                "starIndex": parseInt(splitEmoteLocation[0]),
+                "startIndex": parseInt(splitEmoteLocation[0]),
                 "endIndex": parseInt(splitEmoteLocation[1])
             })
             console.log(JSON.stringify(chatInfo.emotes))
         }
 
+
+        // Move this
         chatInfo.message.push({
             "type": "text",
             "text": message
@@ -86,6 +88,8 @@ wss.on('connection', (ws) => {
             ws.send(JSON.stringify(chatInfo))
         }
 
+        // Order this correctly, 
+        // example: "FrankerZ OhMyDog" = [{"type":"emote","id":"65","text":"FrankerZ"}, {"type":"text","text":" "},{"type":"emote","id":"81103","text":"OhMyDog"}]
         if (chatInfo.emotes !== null) {
             console.log("message has emotes")
             let textArray;
@@ -96,8 +100,26 @@ wss.on('connection', (ws) => {
                 textArray = Array.from(text[x].text)
             }
             console.log(textArray)
-        }
 
+            let emoteInfo, i;
+            emoteInfo = chatInfo.emotes
+            console.log("emote info: " + JSON.stringify(emoteInfo))
+            for (i in emoteInfo) {
+                let tempArray = [];
+                for (j = emoteInfo[i].startIndex; j <= emoteInfo[i].endIndex; j++) {
+                    tempArray.push(textArray[j])
+                }
+                console.log("emote array: " + tempArray.join(''))
+                chatInfo.message.push({
+                    "type": "emote",
+                    "id": emoteInfo[i].emoteId,
+                    "text": tempArray.join('')
+                })
+            }
+            
+            console.log("emotes work? " + JSON.stringify(chatInfo.message))
+            
+        }
 
     })
     ws.on('message', (message) => {
