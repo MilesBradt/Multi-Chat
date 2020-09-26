@@ -50,33 +50,55 @@ wss.on('connection', (ws) => {
         const chatInfo = {
             channel: channel,
             username: username,
-            message: message,
+            message: [],
             color: context.color,
             id: context['user-id'],
-            emotes: context.emotes
+            emotes: []
         }
 
-        const messageToken = []
+        let emotes, id;
 
-        messageToken.push({
+        emotes = context.emotes
+        for (id in emotes) {
+            console.log("emote id: " + id)
+            console.log("emote location: " + emotes[id])
+            const emoteLocation = emotes[id].toString();
+            const splitEmoteLocation = emoteLocation.split("-")
+            console.log(splitEmoteLocation)
+            chatInfo.emotes.push({
+                "emoteId": id,
+                "starIndex": parseInt(splitEmoteLocation[0]),
+                "endIndex": parseInt(splitEmoteLocation[1])
+            })
+            console.log(JSON.stringify(chatInfo.emotes))
+        }
+
+        chatInfo.message.push({
             "type": "text",
-            "text": chatInfo.message
+            "text": message
         })
 
-        console.log("message token: " + JSON.stringify(messageToken))
+        console.log("message token: " + JSON.stringify(chatInfo.message))
 
-        if(chatInfo.emotes === null) {
+        if (chatInfo.emotes === null) {
             console.log("no emotes")
-            chatInfo.message = messageToken
             console.log("Passing to client: " + JSON.stringify(chatInfo))
             ws.send(JSON.stringify(chatInfo))
         }
 
-        if(chatInfo.emotes !== null) {
+        if (chatInfo.emotes !== null) {
             console.log("message has emotes")
+            let textArray;
+            let text, x;
+            text = chatInfo.message
+            for (x in text) {
+                console.log(text[x].text)
+                textArray = Array.from(text[x].text)
+            }
+            console.log(textArray)
         }
 
-        
+
     })
     ws.on('message', (message) => {
         //log the received message and send it back to the client
