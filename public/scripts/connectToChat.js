@@ -17,6 +17,14 @@ function connectToChat(channel) {
 
         shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
+        let emotes, id;
+
+        emotes = chatLog.emotes 
+        for (id in emotes) {
+            console.log("emote id: " + id)
+            console.log("emote location: " + emotes[id])
+        }
+
         const divChannel = document.createElement("div")
         divChannel.id = "channelLine"
         divChannel.className = "channelLines"
@@ -40,7 +48,8 @@ function connectToChat(channel) {
         messageSpan.className = "messages";
         messageSpan.style.color = "#979799";
         messageSpan.style.fontWeight = "normal";
-        messageSpan.textContent = ": " + chatLog.message;
+        messageSpan.textContent = ": " + chatLog.message
+        console.log(chatLog.message)
         divChat.appendChild(messageSpan)
 
         if (!shouldScroll) {
@@ -50,9 +59,6 @@ function connectToChat(channel) {
         console.log('Message from server ', chatLog);
     });
 
-    // const sendMessage = () => {
-    //     socket.send('Hello From Client1!');
-    // }
 
 
 }

@@ -52,7 +52,8 @@ wss.on('connection', (ws) => {
             username: username,
             message: message,
             color: context.color,
-            id: context['user-id']
+            id: context['user-id'],
+            emotes: context.emotes
         }
 
         ws.send(JSON.stringify(chatInfo))
@@ -87,7 +88,6 @@ function onMessageHandler(target, context, msg, self) {
         message: message
     }
 
-    // How tf do I get this to DOM?
     console.log(context)
 }
 
