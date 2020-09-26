@@ -56,7 +56,27 @@ wss.on('connection', (ws) => {
             emotes: context.emotes
         }
 
-        ws.send(JSON.stringify(chatInfo))
+        const messageToken = []
+
+        messageToken.push({
+            "type": "text",
+            "text": chatInfo.message
+        })
+
+        console.log("message token: " + JSON.stringify(messageToken))
+
+        if(chatInfo.emotes === null) {
+            console.log("no emotes")
+            chatInfo.message = messageToken
+            console.log("Passing to client: " + JSON.stringify(chatInfo))
+            ws.send(JSON.stringify(chatInfo))
+        }
+
+        if(chatInfo.emotes !== null) {
+            console.log("message has emotes")
+        }
+
+        
     })
     ws.on('message', (message) => {
         //log the received message and send it back to the client
