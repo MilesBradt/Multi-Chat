@@ -46,6 +46,7 @@ wss.on('connection', (ws) => {
         const message = msg.trim();
         const channel = target.slice(1)
         const username = context['display-name']
+        let lastEnd;
 
         const chatInfo = {
             channel: channel,
@@ -56,69 +57,123 @@ wss.on('connection', (ws) => {
             emotes: []
         }
 
-        let emotes, id;
+        let emotes = context['emotes-raw']
+        const slashRegex = '(?:[^\/\n]|\/\/)+'
+        const rawEmoteArray = [...emotes.matchAll(slashRegex)]
+        console.log("raw emote array: " + rawEmoteArray)
+        const test = rawEmoteArray.toString()
+        const testRegex = test.replace(",,")
+        console.log("test " + testRegex)
+        const test2 = testRegex.split(",")
+        console.log(test2)
 
-        emotes = context.emotes
-        for (id in emotes) {
-            console.log("emote id: " + id)
-            console.log("emote location: " + emotes[id])
-            const emoteLocation = emotes[id].toString();
-            const splitEmoteLocation = emoteLocation.split("-")
-            console.log(splitEmoteLocation)
-            chatInfo.emotes.push({
-                "emoteId": id,
-                "startIndex": parseInt(splitEmoteLocation[0]),
-                "endIndex": parseInt(splitEmoteLocation[1])
-            })
-            console.log(JSON.stringify(chatInfo.emotes))
-        }
-
-
-        // Move this
-        chatInfo.message.push({
-            "type": "text",
-            "text": message
+        rawEmoteArray.forEach(function(e) {
+            console.log("each raw emote: " + e)
         })
+
+
+            // console.log("emote location: " + emotes[i])
+            // const emoteLocation = emotes[id].toString();
+            // const splitEmoteLocation = emoteLocation.split(",")
+            // for (let i = 0; i < splitEmoteLocation.length; i++) {
+            //     let newSplit = splitEmoteLocation[i].split("-")
+            //     chatInfo.emotes.push({
+            //         "emoteId": id,
+            //         "startIndex": parseInt(newSplit[0]),
+            //         "endIndex": parseInt(newSplit[1])
+            //     })
+            // }
+
+            // console.log("emotes?: " + JSON.stringify(splitEmoteLocation))
+    
 
         console.log("message token: " + JSON.stringify(chatInfo.message))
 
-        if (chatInfo.emotes === null) {
+        if (context.emotes === null) {
             console.log("no emotes")
+            chatInfo.message.push({
+                "type": "text",
+                "text": message
+            })
             console.log("Passing to client: " + JSON.stringify(chatInfo))
             ws.send(JSON.stringify(chatInfo))
         }
 
         // Order this correctly, 
-        // example: "FrankerZ OhMyDog" = [{"type":"emote","id":"65","text":"FrankerZ"}, {"type":"text","text":" "},{"type":"emote","id":"81103","text":"OhMyDog"}]
-        if (chatInfo.emotes !== null) {
+        // example: "FrankerZ OhMyDog" = [{"type":"emote","id":"65","text":"FrankerZ"},{"type":"text","text":" "},{"type":"emote","id":"81103","text":"OhMyDog"}]
+        if (context.emotes !== null) {
             console.log("message has emotes")
-            let textArray;
-            let text, x;
-            text = chatInfo.message
-            for (x in text) {
-                console.log(text[x].text)
-                textArray = Array.from(text[x].text)
-            }
-            console.log(textArray)
 
-            let emoteInfo, i;
-            emoteInfo = chatInfo.emotes
-            console.log("emote info: " + JSON.stringify(emoteInfo))
-            for (i in emoteInfo) {
-                let tempArray = [];
-                for (j = emoteInfo[i].startIndex; j <= emoteInfo[i].endIndex; j++) {
-                    tempArray.push(textArray[j])
-                }
-                console.log("emote array: " + tempArray.join(''))
-                chatInfo.message.push({
-                    "type": "emote",
-                    "id": emoteInfo[i].emoteId,
-                    "text": tempArray.join('')
-                })
+            let textArray = [];
+            for (let i = 0; i < message.length; i++) {
+                textArray.push(message[i])
             }
-            
+
+            console.log(textArray)
+            console.log(JSON.stringify(chatInfo.emotes))
+
+            const emoteInfo = chatInfo.emotes
+            console.log("emote info: " + emoteInfo)
+
+            const sortingArray = []
+
+            for (const i in emoteInfo) {
+                sortingArray.push(emoteInfo[i].startIndex)
+            }
+
+            sortingArray.sort(function (a, b) {
+                return a - b
+            })
+
+            console.log("sorted " + sortingArray)
+
+            // for (const i in emoteInfo) {
+            //     console.log("last end " + lastEnd)
+            //     let start = emoteInfo[i].startIndex
+            //     let end = emoteInfo[i].endIndex
+
+            //     if (i == 0) {
+            //         let tempTextArray = [];
+            //         for (j = 0; j < start; j++) {
+            //             tempTextArray.push(textArray[j])
+            //         }
+            //         chatInfo.message.push({
+            //             "type": "text",
+            //             "text": tempTextArray.join('')
+            //         })
+            //     }
+
+            //     if (i > 0) {
+            //         let tempTextArray = [];
+            //         for (j = lastEnd; j < start; j++) {
+            //             tempTextArray.push(textArray[j])
+            //         }
+            //         console.log("temp arrary: " + tempTextArray.join(''))
+            //         chatInfo.message.push({
+            //             "type": "text",
+            //             "text": tempTextArray.join('')
+            //         })
+            //     }
+
+            //     let emoteArray = [];
+            //     console.log(emoteInfo[i])
+            //     for (j = start; j <= end; j++) {
+            //         emoteArray.push(textArray[j])
+            //     }
+            //     console.log("emote array: " + emoteArray.join(''))
+            //     chatInfo.message.push({
+            //         "type": "emote",
+            //         "id": emoteInfo[i].emoteId,
+            //         "text": emoteArray.join('')
+            //     })
+            //     lastEnd = (end + 1)
+
+
+
+            //}
+
             console.log("emotes work? " + JSON.stringify(chatInfo.message))
-            
+
         }
 
     })
