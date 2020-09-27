@@ -64,24 +64,29 @@ wss.on('connection', (ws) => {
             console.log("emote id: " + id)
             console.log("emote location: " + emotes[id])
             const emoteLocation = emotes[id].toString();
-            const splitEmoteLocation = emoteLocation.split("-")
-            console.log(splitEmoteLocation)
-            chatInfo.emotes.push({
-                "emoteId": id,
-                "startIndex": parseInt(splitEmoteLocation[0]),
-                "endIndex": parseInt(splitEmoteLocation[1])
+            console.log("emote?: " + emoteLocation)
+            const splitEmoteLocation = emoteLocation.split(",")
+            splitEmoteLocation.forEach(function (e) {
+                console.log(e)
+                const startandEnd = e.split("-")
+                chatInfo.emotes.push({
+                    "emoteId": id,
+                    "startIndex": parseInt(startandEnd[0]),
+                    "endIndex": parseInt(startandEnd[1])
+                })
             })
+
             console.log(JSON.stringify(chatInfo.emotes))
         }
 
         // Thank you, Ege Özcan: https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
         function dynamicSort(property) {
             var sortOrder = 1;
-            if(property[0] === "-") {
+            if (property[0] === "-") {
                 sortOrder = -1;
                 property = property.substr(1);
             }
-            return function (a,b) {
+            return function (a, b) {
                 var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
                 return result * sortOrder;
             }
@@ -155,7 +160,7 @@ wss.on('connection', (ws) => {
                     "text": emoteArray.join('')
                 })
                 lastEnd = (end + 1)
-                
+
             }
 
             console.log("emotes work? " + JSON.stringify(chatInfo.message))
