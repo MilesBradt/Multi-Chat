@@ -4,20 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <title>Sample Site</title>
-    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet"> 
+    <!-- CSS Reset -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+    <!-- Milligram CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
     <link rel="stylesheet" href="/stylesheets/style.css">
     <script src="/scripts/connectToChat.js"></script>
 </head>
 
 <body>
     <div class="container" id="chat-container">
-        <div id="button-div">
-            <button onclick="connectToChat(['snowman'])">Connect to chat</button>
-            <!-- <button onclick="connectToChat()">Send message</button> -->
-        </div>
-        
-        <div id="chat">
 
+        <div class="row">
+            <div class="column" id="button-div">
+                <button onclick="connectToChat(['snowman'])">Connect to chat</button>
+            </div>
+            
+            <div class="column column-33 column-offset-25" id="chat">
+
+            </div>
+            
         </div>
     </div>
 </body>
