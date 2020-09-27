@@ -1,24 +1,44 @@
 body { 
     padding-top: 50px; 
     background-color: #0e0e10;
+    font-family: 'Roboto', sans-serif;
 }
 
 #button-div {
     margin-left: 5em;
 }
 
+div {
+    display: block;
+}
+
+img {
+    margin: -.5rem 0;
+    position: relative;
+    vertical-align: middle;
+}
+
 #chat {
     background-color: #0e0e10;
     height: 700px;
-    width: 500px;
     overflow-y: auto;
-    float: left;
     font-size: 13px;
     margin-left: 5em;
     margin-top: 1em;
+    padding-top: 1em;
     border-style: solid;
     border-color: #979799;
     border-width: 0.1em;
+}
+
+.messages {
+    margin: 0;
+    padding: 0;
+    vertical-align: baseline;
+}
+
+.beforeMessage {
+    color: #e0e0e0;
 }
 
 .channelLines {
@@ -29,6 +49,7 @@ body {
 }
 
 .chatLines {
+    vertical-align: text-top;
     padding-bottom: 1em;
     margin-right: 1em;
     margin-left: 0.5em;
