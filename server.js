@@ -64,7 +64,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman']
+        channelsSent = ['harbleu']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -190,7 +190,7 @@ function dynamicSort(property) {
         var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
         return result * sortOrder;
     }
-    
+
 }
 
 
