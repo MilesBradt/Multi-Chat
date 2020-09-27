@@ -61,7 +61,6 @@ function createUserNameSpan(chatLog, chatLine) {
     usernameSpan.style.color = chatLog.color;
     usernameSpan.style.fontWeight = "bold";
     chatLine.appendChild(usernameSpan)
-    console.log(usernameSpan)
 }
 
 function createMessageSpan(chatLog) {
@@ -72,14 +71,12 @@ function createMessageSpan(chatLog) {
     const messagesArray = [];
     postTwitchEmotes(chatLog, messagesArray)
     messageSpan.innerHTML = ": " + messagesArray.join('')
-    console.log(chatLog.message)
     return messageSpan
 }
 
 function postTwitchEmotes(chatLog, messagesArray) {
     const messages = chatLog.message
     for (const i in messages) {
-        console.log("each message: " + messages[i])
         if (messages[i].type === "emote") {
             messagesArray.push("<img src=https://static-cdn.jtvnw.net/emoticons/v1/" + messages[i].id + "/1.0></img>")
         }
