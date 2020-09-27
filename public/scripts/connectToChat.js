@@ -17,14 +17,6 @@ function connectToChat(channel) {
 
         shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
-        // let emotes, id;
-
-        // emotes = chatLog.emotes 
-        // for (id in emotes) {
-        //     console.log("emote id: " + id)
-        //     console.log("emote location: " + emotes[id])
-        // }
-
         const divChannel = document.createElement("div")
         divChannel.id = "channelLine"
         divChannel.className = "channelLines"
@@ -48,9 +40,24 @@ function connectToChat(channel) {
         messageSpan.className = "messages";
         messageSpan.style.color = "#979799";
         messageSpan.style.fontWeight = "normal";
-        messageSpan.textContent = ": " + chatLog.message
+        const messages = chatLog.message
+        const messagesArray = [];
+
+        for (const i in messages) {
+            console.log("each message: " + messages[i])
+            if(messages[i].type === "emote") {
+                messagesArray.push("<img src=https://static-cdn.jtvnw.net/emoticons/v1/" + messages[i].id + "/1.0></img>")
+            }
+            if(messages[i].type === "text") {
+                messagesArray.push(messages[i].text)
+            }
+        }
+
+        messageSpan.innerHTML = ": " + messagesArray.join('')
         console.log(chatLog.message)
         divChat.appendChild(messageSpan)
+
+        
 
         if (!shouldScroll) {
             scrollToBottom();
