@@ -57,7 +57,7 @@ function createChannelLine(chatLog) {
 function createUserNameSpan(chatLog, chatLine) {
     const usernameSpan = document.createElement("span");
     usernameSpan.id = chatLog.id;
-    usernameSpan.textContent = chatLog.username;
+    usernameSpan.innerHTML = chatLog.username + "<span class='beforeMessage'>: </span>";
     usernameSpan.style.color = chatLog.color;
     usernameSpan.style.fontWeight = "bold";
     chatLine.appendChild(usernameSpan)
@@ -66,11 +66,11 @@ function createUserNameSpan(chatLog, chatLine) {
 function createMessageSpan(chatLog) {
     const messageSpan = document.createElement("span");
     messageSpan.className = "messages";
-    messageSpan.style.color = "#979799";
+    messageSpan.style.color = "#e0e0e0";
     messageSpan.style.fontWeight = "normal";
     const messagesArray = [];
     postTwitchEmotes(chatLog, messagesArray)
-    messageSpan.innerHTML = ": " + messagesArray.join('')
+    messageSpan.innerHTML = messagesArray.join('')
     return messageSpan
 }
 
