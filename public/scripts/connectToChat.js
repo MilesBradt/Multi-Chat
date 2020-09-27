@@ -17,13 +17,13 @@ function connectToChat(channel) {
 
         shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
-        let emotes, id;
+        // let emotes, id;
 
-        emotes = chatLog.emotes 
-        for (id in emotes) {
-            console.log("emote id: " + id)
-            console.log("emote location: " + emotes[id])
-        }
+        // emotes = chatLog.emotes 
+        // for (id in emotes) {
+        //     console.log("emote id: " + id)
+        //     console.log("emote location: " + emotes[id])
+        // }
 
         const divChannel = document.createElement("div")
         divChannel.id = "channelLine"
