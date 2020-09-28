@@ -22,11 +22,14 @@ function scrollToBottom(chat) {
 function postToDOM(event) {
     const chatLog = JSON.parse(event.data);
     const chat = document.getElementById('chat');
+    console.log(chatLog)
 
     let shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
+    
     createChannelLine(chatLog)
     let chatLine = createChatLine()
+    createBadges(chatLog, chatLine)
     createUserNameSpan(chatLog, chatLine)
     let messageSpan = createMessageSpan(chatLog)
     
@@ -49,9 +52,19 @@ function createChannelLine(chatLog) {
     const channelLine = document.createElement("div")
     channelLine.id = "channelLine"
     channelLine.className = "channelLines"
-    channelLine.textContent = chatLog.channel + "'s chat"
+    channelLine.innerHTML = chatLog.channel + "'s chat"
     document.getElementById("chat").appendChild(channelLine)
     return channelLine
+}
+
+function createBadges(chatLog, chatLine) {
+    chatLog.badges.forEach(function(e) {
+        const img = document.createElement("IMG");
+        img.id = e.id
+        img.className = "badges"
+        img.src = e.url
+        chatLine.appendChild(img)
+    })
 }
 
 function createUserNameSpan(chatLog, chatLine) {
@@ -78,7 +91,7 @@ function postTwitchEmotes(chatLog, messagesArray) {
     const messages = chatLog.message
     for (const i in messages) {
         if (messages[i].type === "emote") {
-            messagesArray.push("<img src=https://static-cdn.jtvnw.net/emoticons/v1/" + messages[i].id + "/1.0></img>")
+            messagesArray.push("<img class='emotes' src=https://static-cdn.jtvnw.net/emoticons/v1/" + messages[i].id + "/1.0></img>")
         }
         if (messages[i].type === "text") {
             messagesArray.push(messages[i].text)
