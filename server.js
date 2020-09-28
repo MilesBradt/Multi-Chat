@@ -1,6 +1,7 @@
 const express = require('express');
 const tmi = require('tmi.js');
 const app = express();
+const fetch = require('node-fetch');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
@@ -30,7 +31,7 @@ wss.on('connection', (ws) => {
     };
     // Create a client with Twitch options
     const client = new tmi.client(opts);
-    
+
     client.on('message', onMessageHandler);
     client.on('connected', onConnectedHandler);
 
@@ -48,15 +49,24 @@ wss.on('connection', (ws) => {
             message: [],
             color: context.color,
             id: context['user-id'],
-            emotes: []
+            emotes: [],
+            badges: []
         }
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
-        sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+        if(context['badge-info'] === null) {
+            sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+        } else {
+        getTwitchBadges(context, chatInfo)
+            .then(() => {
+                sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+            })
+        }
+
     })
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman']
+        channelsSent = ['tooshi', 'snowman', 'bobross']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -72,7 +82,7 @@ function onMessageHandler(target, context, msg, self) {
     if (self) {
         return;
     }
-    console.log(context)
+    // console.log(context)
 }
 
 // Called every time the bot connects to Twitch chat
@@ -98,6 +108,73 @@ function getTwitchEmotes(context, chatInfo) {
     }
     const sortedByIndex = chatInfo.emotes.sort(dynamicSort("startIndex"))
     return sortedByIndex
+}
+
+function callTwitchBadgeAPI(url) {
+    return fetch(url, {
+        method: 'GET'
+    })
+        .then(response => response.json())
+        .then(data => {
+            return data
+        })
+        .catch(err => console.error(err))
+}
+
+
+async function getTwitchBadges(context, chatInfo) {
+    let roomNumber = context['room-id']
+    let badgeTypes = Object.getOwnPropertyNames(context.badges)
+    let badgeValues = Object.values(context.badges)
+    let badgeToken = [];
+    let globalEmotes = [];
+    let url = "https://badges.twitch.tv/v1/badges/channels/" + context["room-id"] + "/display"
+    let globalUrl = "https://badges.twitch.tv/v1/badges/global/display"
+
+    let globalAPI = await callTwitchBadgeAPI(globalUrl)
+
+    globalEmotes = Object.getOwnPropertyNames(globalAPI.badge_sets)
+
+    for (let i = 0; i < badgeTypes.length; i++) {
+        if (badgeTypes[i] === "subscriber") {
+            badgeToken.push({
+                "global": false,
+                "type": badgeTypes[i],
+                "id": badgeValues[i],
+                "url": null
+            })
+        }
+        else if (globalEmotes.includes(badgeTypes[i])) {
+            badgeToken.push({
+                "global": true,
+                "type": badgeTypes[i],
+                "id": badgeValues[i],
+                "url": null
+            })
+        } else {
+            badgeToken.push({
+                "global": false,
+                "type": badgeTypes[i],
+                "id": badgeValues[i],
+                "url": null
+            })
+
+        }
+    }
+
+    if (context['badge-info'] !== null) {
+        for (i in badgeToken) {
+            if (badgeToken[i].global === false) {
+                let api = await callTwitchBadgeAPI(url)
+                badgeToken[i].url = api.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
+                chatInfo.badges.push(badgeToken[i])
+            }
+            else if (badgeToken[i].global === true) {
+                badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
+                chatInfo.badges.push(badgeToken[i])
+            }
+        }
+    }
 }
 
 function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
