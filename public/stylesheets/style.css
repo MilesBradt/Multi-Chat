@@ -12,7 +12,7 @@ div {
     display: block;
 }
 
-img {
+.emotes {
     margin: -.5rem 0;
     position: relative;
     vertical-align: middle;
@@ -29,6 +29,12 @@ img {
     border-style: solid;
     border-color: #979799;
     border-width: 0.1em;
+}
+
+.badges {
+    padding: 0.2em;
+    position: relative;
+    vertical-align: middle;
 }
 
 .messages {
