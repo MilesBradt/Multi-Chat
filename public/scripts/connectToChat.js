@@ -1,3 +1,5 @@
+
+
 function connectToChat(channel) {
     // Create WebSocket connection.
     const socket = new WebSocket('ws://localhost:8080');
@@ -6,6 +8,8 @@ function connectToChat(channel) {
     socket.addEventListener('open', function (event) {
         console.log('Connected to WS Server')
         socket.send(channel)
+        ca = new Color.Adjuster;
+        
     });
 
     // Listen for messages
@@ -23,7 +27,8 @@ function postToDOM(event) {
     const chatLog = JSON.parse(event.data);
     const chat = document.getElementById('chat');
     console.log(chatLog)
-
+    
+    
     let shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
     createChannelLine(chatLog)
@@ -70,7 +75,12 @@ function createUserNameSpan(chatLog, chatLine) {
     const usernameSpan = document.createElement("span");
     usernameSpan.id = chatLog.id;
     usernameSpan.innerHTML = chatLog.username + "<span class='beforeMessage'>: </span>";
+    console.log("old color: " + chatLog.color)
+    chatLog.color = ca.process(chatLog.color)
     usernameSpan.style.color = chatLog.color;
+    console.log("new color: " + chatLog.color)
+    console.log(chatLog)
+    
     usernameSpan.style.fontWeight = "bold";
     chatLine.appendChild(usernameSpan)
 }

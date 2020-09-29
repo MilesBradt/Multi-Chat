@@ -32,7 +32,7 @@ div {
 }
 
 .badges {
-    padding: 0.2em;
+    padding-right: 0.5em;
     position: relative;
     vertical-align: middle;
 }

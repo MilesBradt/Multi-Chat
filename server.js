@@ -6,6 +6,7 @@ const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const e = require('express');
+const { channel } = require('tmi.js/lib/utils');
 const server = http.createServer(app);
 
 app.use(express.static('public'))
@@ -38,6 +39,26 @@ wss.on('connection', (ws) => {
 
     // Connect to Twitch:
     client.connect();
+    client.on("clearchat", (channel) => {
+        console.log(channel)
+    })
+    client.on("ban", (channel, username, reason, userstate) => {
+        console.log(userstate)
+    });
+
+    client.on("timeout", (channel, username, reason, duration, userstate) => {
+        console.log(userstate)
+    });
+
+    client.on("subscription", (channel, username, method, message, userstate) => {
+        console.log(userstate)
+    });
+
+    client.on("resub", (channel, username, months, message, userstate, methods) => {
+        console.log(userstate)
+        let cumulativeMonths = ~~userstate["msg-param-cumulative-months"];
+    });
+
     client.on('message', (target, context, msg, self) => {
         const message = msg.trim();
         const channel = target.slice(1)
@@ -60,7 +81,7 @@ wss.on('connection', (ws) => {
 
             sendMessageToClient(context, chatInfo, message, emoteToken, ws)
         } else {
-            getTwitchBadges(context, chatInfo).catch(() => { console.log("error on message: " + context) })
+            getTwitchBadges(context, chatInfo).catch(() => { console.log("chat moving too fast :(") })
                 .then(() => {
                     sendMessageToClient(context, chatInfo, message, emoteToken, ws)
                 })
@@ -70,7 +91,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman']
+        channelsSent = ['snowman', 'jcog', 'PangaeaPanga']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -86,7 +107,7 @@ function onMessageHandler(target, context, msg, self) {
     if (self) {
         return;
     }
-    // console.log(context)
+    
 }
 
 // Called every time the bot connects to Twitch chat
@@ -144,8 +165,6 @@ async function sortTwitchBadges(badgeTypes, globalBadges, globalAPI, badgeValues
     let url = "https://badges.twitch.tv/v1/badges/channels/" + context["room-id"] + "/display"
     let badgeToken = [];
 
-    console.log(badgeTypes)
-
     for (let i = 0; i < badgeTypes.length; i++) {
         if (badgeTypes[i] === "subscriber") {
             badgeToken.push({
@@ -155,7 +174,7 @@ async function sortTwitchBadges(badgeTypes, globalBadges, globalAPI, badgeValues
                 "url": null
             })
         }
-        else if (globalBadges.includes(badgeTypes[i])) {
+        if (globalBadges.includes(badgeTypes[i])) {
             badgeToken.push({
                 "global": true,
                 "type": badgeTypes[i],
@@ -257,7 +276,6 @@ function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
                 })
             }
         }
-        console.log(context)
         ws.send(JSON.stringify(chatInfo))
     }
 }
