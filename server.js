@@ -5,6 +5,7 @@ const fetch = require('node-fetch');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
+const e = require('express');
 const server = http.createServer(app);
 
 app.use(express.static('public'))
@@ -52,21 +53,24 @@ wss.on('connection', (ws) => {
             emotes: [],
             badges: []
         }
+
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
-        if(context['badge-info'] === null) {
+
+        if (context['badge-info'] === null) {
+
             sendMessageToClient(context, chatInfo, message, emoteToken, ws)
         } else {
-        getTwitchBadges(context, chatInfo)
-            .then(() => {
-                sendMessageToClient(context, chatInfo, message, emoteToken, ws)
-            })
+            getTwitchBadges(context, chatInfo).catch(() => { console.log("error on message: " + context) })
+                .then(() => {
+                    sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                })
         }
 
     })
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['tooshi', 'snowman', 'bobross']
+        channelsSent = ['firedragon']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -110,7 +114,7 @@ function getTwitchEmotes(context, chatInfo) {
     return sortedByIndex
 }
 
-function callTwitchBadgeAPI(url) {
+function callAPI(url, context) {
     return fetch(url, {
         method: 'GET'
     })
@@ -118,22 +122,27 @@ function callTwitchBadgeAPI(url) {
         .then(data => {
             return data
         })
-        .catch(err => console.error(err))
+        .catch(err => {
+            return console.error(err)
+        })
 }
 
-
 async function getTwitchBadges(context, chatInfo) {
-    let roomNumber = context['room-id']
     let badgeTypes = Object.getOwnPropertyNames(context.badges)
     let badgeValues = Object.values(context.badges)
-    let badgeToken = [];
-    let globalEmotes = [];
-    let url = "https://badges.twitch.tv/v1/badges/channels/" + context["room-id"] + "/display"
+
     let globalUrl = "https://badges.twitch.tv/v1/badges/global/display"
+    let globalAPI = await callAPI(globalUrl, context)
 
-    let globalAPI = await callTwitchBadgeAPI(globalUrl)
+    const globalBadges = Object.getOwnPropertyNames(globalAPI.badge_sets)
 
-    globalEmotes = Object.getOwnPropertyNames(globalAPI.badge_sets)
+    await sortTwitchBadges(badgeTypes, globalBadges, globalAPI, badgeValues, context, chatInfo)
+
+}
+
+async function sortTwitchBadges(badgeTypes, globalBadges, globalAPI, badgeValues, context, chatInfo) {
+    let url = "https://badges.twitch.tv/v1/badges/channels/" + context["room-id"] + "/display"
+    let badgeToken = [];
 
     for (let i = 0; i < badgeTypes.length; i++) {
         if (badgeTypes[i] === "subscriber") {
@@ -144,7 +153,7 @@ async function getTwitchBadges(context, chatInfo) {
                 "url": null
             })
         }
-        else if (globalEmotes.includes(badgeTypes[i])) {
+        else if (globalBadges.includes(badgeTypes[i])) {
             badgeToken.push({
                 "global": true,
                 "type": badgeTypes[i],
@@ -158,23 +167,28 @@ async function getTwitchBadges(context, chatInfo) {
                 "id": badgeValues[i],
                 "url": null
             })
-
         }
     }
 
     if (context['badge-info'] !== null) {
         for (i in badgeToken) {
-            if (badgeToken[i].global === false) {
-                let api = await callTwitchBadgeAPI(url)
-                badgeToken[i].url = api.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
+            if (badgeToken[i].global === true) {
+                badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
                 chatInfo.badges.push(badgeToken[i])
             }
-            else if (badgeToken[i].global === true) {
-                badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
+            else if (badgeToken[i].global === false) {
+                let api = await callAPI(url, context)
+                badgeToken[i].url = api.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
                 chatInfo.badges.push(badgeToken[i])
             }
         }
     }
+}
+
+async function getFFZGlobalEmotes() {
+    const url = 'https://api.frankerfacez.com/v1/set/global'
+    let ffzAPI = await callAPI(url)
+    // console.log(ffzAPI.sets['3'])
 }
 
 function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
@@ -188,44 +202,60 @@ function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
 
     if (context.emotes !== null) {
         let textArray = [];
+        let messageToken = [];
         for (let i = 0; i < message.length; i++) {
             textArray.push(message[i])
         }
-        for (const i in emoteToken) {
-            let start = emoteToken[i].startIndex
-            let end = emoteToken[i].endIndex
-            if (i == 0) {
-                let tempTextArray = [];
-                for (j = 0; j < start; j++) {
-                    tempTextArray.push(textArray[j])
-                }
-                chatInfo.message.push({
-                    "type": "text",
-                    "text": tempTextArray.join('')
-                })
-            }
-            if (i > 0) {
-                let tempTextArray = [];
-                for (j = lastEnd; j < start; j++) {
-                    tempTextArray.push(textArray[j])
-                }
+        
+        let startTextArray = [];
+        for (j = 0; j < emoteToken[0].startIndex; j++) {
+            startTextArray.push(textArray[j])
+        }
+        chatInfo.message.push({
+            "type": "text",
+            "text": startTextArray.join('')
+        })
 
-                chatInfo.message.push({
-                    "type": "text",
-                    "text": tempTextArray.join('')
-                })
-            }
-            let emoteArray = [];
-            for (j = start; j <= end; j++) {
-                emoteArray.push(textArray[j])
+        let nextIndexArray = [];
+
+        for (let i = 1; i < emoteToken.length; i++) {
+            nextIndexArray.push(emoteToken[i].startIndex)
+        }
+
+        for (const i in emoteToken) {
+
+            let typeEmoteArray = [];
+
+            for (j = emoteToken[i].startIndex; j <= emoteToken[i].endIndex; j++) {
+                typeEmoteArray.push(textArray[j])
             }
             chatInfo.message.push({
                 "type": "emote",
                 "id": emoteToken[i].emoteId,
-                "text": emoteArray.join('')
+                "text": typeEmoteArray.join('')
             })
-            lastEnd = (end + 1)
+
+            if (nextIndexArray.length !== 0) {
+                let typeTextArray = [];
+                for (j = (emoteToken[i].endIndex + 1); j < nextIndexArray[i]; j++) {
+                    typeTextArray.push(textArray[j])
+                }
+                chatInfo.message.push({
+                    "type": "text",
+                    "text": typeTextArray.join('')
+                })
+            } else if (nextIndexArray.length == 0) {
+                let typeTextArray = [];
+                for (j = (emoteToken[i].endIndex + 1); j < textArray.length; j++) {
+                    typeTextArray.push(textArray[j])
+                }
+                chatInfo.message.push({
+                    "type": "text",
+                    "text": typeTextArray.join('')
+                })
+            }
         }
+        console.log(context)
         ws.send(JSON.stringify(chatInfo))
     }
 }

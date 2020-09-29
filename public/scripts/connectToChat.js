@@ -26,7 +26,6 @@ function postToDOM(event) {
 
     let shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
-    
     createChannelLine(chatLog)
     let chatLine = createChatLine()
     createBadges(chatLog, chatLine)
@@ -98,3 +97,4 @@ function postTwitchEmotes(chatLog, messagesArray) {
         }
     }
 }
+
