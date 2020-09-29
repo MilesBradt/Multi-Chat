@@ -8,6 +8,7 @@ const WebSocket = require('ws');
 const e = require('express');
 const { channel } = require('tmi.js/lib/utils');
 const server = http.createServer(app);
+import { GetAPI } from './callAPI.js'
 
 app.use(express.static('public'))
 

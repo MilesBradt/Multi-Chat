@@ -75,12 +75,8 @@ function createUserNameSpan(chatLog, chatLine) {
     const usernameSpan = document.createElement("span");
     usernameSpan.id = chatLog.id;
     usernameSpan.innerHTML = chatLog.username + "<span class='beforeMessage'>: </span>";
-    console.log("old color: " + chatLog.color)
     chatLog.color = ca.process(chatLog.color)
     usernameSpan.style.color = chatLog.color;
-    console.log("new color: " + chatLog.color)
-    console.log(chatLog)
-    
     usernameSpan.style.fontWeight = "bold";
     chatLine.appendChild(usernameSpan)
 }
