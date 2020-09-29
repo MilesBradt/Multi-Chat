@@ -56,7 +56,7 @@ wss.on('connection', (ws) => {
 
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
-        if (context['badge-info'] === null) {
+        if (context.badges === null) {
 
             sendMessageToClient(context, chatInfo, message, emoteToken, ws)
         } else {
@@ -70,7 +70,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['firedragon']
+        channelsSent = ['snowman']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -144,6 +144,8 @@ async function sortTwitchBadges(badgeTypes, globalBadges, globalAPI, badgeValues
     let url = "https://badges.twitch.tv/v1/badges/channels/" + context["room-id"] + "/display"
     let badgeToken = [];
 
+    console.log(badgeTypes)
+
     for (let i = 0; i < badgeTypes.length; i++) {
         if (badgeTypes[i] === "subscriber") {
             badgeToken.push({
@@ -170,7 +172,7 @@ async function sortTwitchBadges(badgeTypes, globalBadges, globalAPI, badgeValues
         }
     }
 
-    if (context['badge-info'] !== null) {
+    if (context.badges !== null) {
         for (i in badgeToken) {
             if (badgeToken[i].global === true) {
                 badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
