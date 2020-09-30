@@ -92,7 +92,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'jcog', 'PangaeaPanga', 'tooshi']
+        channelsSent = ['snowman', 'jcog', 'PangaeaPanga', 'tooshi', 'vespher', 'Bird650']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })

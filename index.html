@@ -13,22 +13,45 @@
     <link rel="stylesheet" href="/stylesheets/style.css">
     <script src="/scripts/color.js"></script>
     <script src="/scripts/connectToChat.js"></script>
+    <style>
+        /* width */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 25px;
+        }
+
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b78f05d;
+            border-radius: 25px;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container" id="chat-container">
 
         <div class="row">
-            <div class="column" id="button-div">
-                <button onclick="connectToChat(['snowman'])">Connect to chat</button>
-            </div>
-            
-            <div class="column column-33 column-offset-25" id="chat">
+            <div class="column column-40 column-offset-25" id="chat">
 
             </div>
-            
+            <div class="column column-60"></div>
+        </div>
+        <div id="button-div">
+            <button onclick="connectToChat(['snowman'])">Connect to chat</button>
         </div>
     </div>
+    
 </body>
 
 </html>

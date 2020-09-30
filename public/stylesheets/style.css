@@ -1,11 +1,15 @@
-body { 
-    padding-top: 50px; 
-    background-color: #0e0e10;
+html, body { 
+    height: 100%;
+    background-color:#18181b;
     font-family: 'Roboto', sans-serif;
 }
 
 #button-div {
-    margin-left: 5em;
+    margin-left: 4em;
+}
+
+button {
+    background-color: #9147ff;
 }
 
 div {
@@ -19,20 +23,28 @@ div {
 }
 
 #chat {
-    background-color: #0e0e10;
-    height: 700px;
+    background-color:#0e0e10;
     overflow-y: auto;
     font-size: 13px;
     margin-left: 5em;
     margin-top: 1em;
+    margin-bottom: 1em;
     padding-top: 1em;
     border-style: solid;
     border-color: #979799;
     border-width: 0.1em;
 }
 
+.container {
+    height: 100%;
+}
+
+.row {
+    height: 90%
+}
+
 .badges {
-    padding-right: 0.5em;
+    padding-right: 0.3em;
     position: relative;
     vertical-align: middle;
 }
@@ -59,4 +71,8 @@ div {
     padding-bottom: 1em;
     margin-right: 1em;
     margin-left: 0.5em;
+}
+
+#chat-container {
+    padding-top: 1em; 
 }
