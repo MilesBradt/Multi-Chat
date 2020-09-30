@@ -8,7 +8,6 @@ const WebSocket = require('ws');
 const e = require('express');
 const { channel } = require('tmi.js/lib/utils');
 const server = http.createServer(app);
-import { GetAPI } from './callAPI.js'
 
 app.use(express.static('public'))
 
@@ -79,20 +78,21 @@ wss.on('connection', (ws) => {
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
         if (context.badges === null) {
-
             sendMessageToClient(context, chatInfo, message, emoteToken, ws)
         } else {
-            getTwitchBadges(context, chatInfo).catch(() => { console.log("chat moving too fast :(") })
-                .then(() => {
-                    sendMessageToClient(context, chatInfo, message, emoteToken, ws)
-                })
+            let getBadges = getTwitchBadges(context, chatInfo)
+            getBadges.then(() => {
+                sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+            }).catch(() => { 
+                console.log("error...somewhere")
+                console.log(context)
+            })
         }
-
     })
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'jcog', 'PangaeaPanga']
+        channelsSent = ['snowman', 'jcog', 'PangaeaPanga', 'tooshi']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -108,7 +108,7 @@ function onMessageHandler(target, context, msg, self) {
     if (self) {
         return;
     }
-    
+
 }
 
 // Called every time the bot connects to Twitch chat
@@ -150,24 +150,23 @@ function callAPI(url, context) {
 }
 
 async function getTwitchBadges(context, chatInfo) {
-    let badgeTypes = Object.getOwnPropertyNames(context.badges)
-    let badgeValues = Object.values(context.badges)
 
     let globalUrl = "https://badges.twitch.tv/v1/badges/global/display"
     let globalAPI = await callAPI(globalUrl, context)
 
     const globalBadges = Object.getOwnPropertyNames(globalAPI.badge_sets)
 
-    await sortTwitchBadges(badgeTypes, globalBadges, globalAPI, badgeValues, context, chatInfo)
-
-}
-
-async function sortTwitchBadges(badgeTypes, globalBadges, globalAPI, badgeValues, context, chatInfo) {
     let url = "https://badges.twitch.tv/v1/badges/channels/" + context["room-id"] + "/display"
+    let channelAPI = await callAPI(url)
+
+    const channelBadges = Object.getOwnPropertyNames(channelAPI.badge_sets)
+
+    let badgeTypes = Object.getOwnPropertyNames(context.badges)
+    let badgeValues = Object.values(context.badges)
     let badgeToken = [];
 
     for (let i = 0; i < badgeTypes.length; i++) {
-        if (badgeTypes[i] === "subscriber") {
+        if (channelBadges.includes(badgeTypes[i])) {
             badgeToken.push({
                 "global": false,
                 "type": badgeTypes[i],
@@ -175,37 +174,38 @@ async function sortTwitchBadges(badgeTypes, globalBadges, globalAPI, badgeValues
                 "url": null
             })
         }
-        if (globalBadges.includes(badgeTypes[i])) {
+        else if (globalBadges.includes(badgeTypes[i])) {
             badgeToken.push({
                 "global": true,
                 "type": badgeTypes[i],
                 "id": badgeValues[i],
                 "url": null
             })
-        } else {
-            badgeToken.push({
-                "global": false,
-                "type": badgeTypes[i],
-                "id": badgeValues[i],
-                "url": null
-            })
         }
     }
-
-    if (context.badges !== null) {
-        for (i in badgeToken) {
-            if (badgeToken[i].global === true) {
-                badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
-                chatInfo.badges.push(badgeToken[i])
-            }
-            else if (badgeToken[i].global === false) {
-                let api = await callAPI(url, context)
-                badgeToken[i].url = api.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
+    for (i in badgeToken) {
+        if (badgeToken[i].global === true) {
+            badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
+            chatInfo.badges.push(badgeToken[i])
+        }
+        else if (badgeToken[i].global === false) {
+            if (badgeToken[i].type === "bits") {
+                let lowestBitValue = Object.getOwnPropertyNames(channelAPI.badge_sets.bits.versions);
+                if (badgeToken[i].id < lowestBitValue) {
+                    badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
+                    chatInfo.badges.push(badgeToken[i])
+                } else {
+                    badgeToken[i].url = channelAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
+                    chatInfo.badges.push(badgeToken[i])
+                }
+            } else {
+                badgeToken[i].url = channelAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
                 chatInfo.badges.push(badgeToken[i])
             }
         }
     }
 }
+
 
 async function getFFZGlobalEmotes() {
     const url = 'https://api.frankerfacez.com/v1/set/global'
@@ -228,7 +228,7 @@ function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
         for (let i = 0; i < message.length; i++) {
             textArray.push(message[i])
         }
-        
+
         let startTextArray = [];
         for (j = 0; j < emoteToken[0].startIndex; j++) {
             startTextArray.push(textArray[j])
@@ -293,9 +293,3 @@ function dynamicSort(property) {
         return result * sortOrder;
     }
 }
-
-
-
-
-
-
