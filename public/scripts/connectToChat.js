@@ -1,15 +1,14 @@
-
-
 function connectToChat(channel) {
     // Create WebSocket connection.
-    const socket = new WebSocket('ws://localhost:8080');
+    // const socket = new WebSocket('ws://localhost:8080');
+
+    var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws");
 
     // Connection opened
     socket.addEventListener('open', function (event) {
         console.log('Connected to WS Server')
         socket.send(channel)
         ca = new Color.Adjuster;
-        
     });
 
     // Listen for messages
@@ -27,8 +26,7 @@ function postToDOM(event) {
     const chatLog = JSON.parse(event.data);
     const chat = document.getElementById('chat');
     console.log(chatLog)
-    
-    
+
     let shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
     createChannelLine(chatLog)
@@ -36,7 +34,7 @@ function postToDOM(event) {
     createBadges(chatLog, chatLine)
     createUserNameSpan(chatLog, chatLine)
     let messageSpan = createMessageSpan(chatLog)
-    
+
     chatLine.appendChild(messageSpan)
 
     if (!shouldScroll) {
@@ -62,7 +60,7 @@ function createChannelLine(chatLog) {
 }
 
 function createBadges(chatLog, chatLine) {
-    chatLog.badges.forEach(function(e) {
+    chatLog.badges.forEach(function (e) {
         const img = document.createElement("IMG");
         img.id = e.id
         img.className = "badges"
@@ -71,13 +69,14 @@ function createBadges(chatLog, chatLine) {
     })
 }
 
-function createUserNameSpan(chatLog, chatLine) {
+function createUserNameSpan(chatLog, chatLine, defaultColors) {
     const usernameSpan = document.createElement("span");
     usernameSpan.id = chatLog.id;
     usernameSpan.innerHTML = chatLog.username + "<span class='beforeMessage'>: </span>";
     chatLog.color = ca.process(chatLog.color)
     usernameSpan.style.color = chatLog.color;
     usernameSpan.style.fontWeight = "bold";
+
     chatLine.appendChild(usernameSpan)
 }
 

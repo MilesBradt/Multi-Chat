@@ -8,6 +8,8 @@ const WebSocket = require('ws');
 const e = require('express');
 const { channel } = require('tmi.js/lib/utils');
 const server = http.createServer(app);
+const defaultColors = ['#ff0000', '#0000ff', '#008000', '#b22222', '#ff7f50', '#ff7f50', '#ff4500', '#2e8b57', '#daa520', '#d2691e', '#5f9ea0', '#1e90ff', '#ff69b4', '#8a2be2', '#00ff7f']
+
 
 app.use(express.static('public'))
 
@@ -22,7 +24,13 @@ console.log("HTML hosted at http://localhost:8080");
 const wss = new WebSocket.Server({ server: server });
 
 wss.on('connection', (ws) => {
-    const channels = [];
+    let channels = [];
+    let usersWithoutColor = [{
+            "id": '000000000',
+            "color": '#000'
+        }];
+    let colorlessArray = ['000000000'];
+
     // Define configuration options
     const opts = {
         connection: {
@@ -75,6 +83,10 @@ wss.on('connection', (ws) => {
             badges: []
         }
 
+        if(context.color === null) {
+            setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
+        }
+        
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
         if (context.badges === null) {
@@ -83,7 +95,7 @@ wss.on('connection', (ws) => {
             let getBadges = getTwitchBadges(context, chatInfo)
             getBadges.then(() => {
                 sendMessageToClient(context, chatInfo, message, emoteToken, ws)
-            }).catch(() => { 
+            }).catch(() => {
                 console.log("error...somewhere")
                 console.log(context)
             })
@@ -92,7 +104,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'jcog', 'PangaeaPanga', 'tooshi', 'vespher', 'Bird650']
+        channelsSent = ['snowman', 'jcog', 'PangaeaPanga']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -114,6 +126,35 @@ function onMessageHandler(target, context, msg, self) {
 // Called every time the bot connects to Twitch chat
 function onConnectedHandler(addr, port) {
     console.log(`* Bot connected to ${addr}:${port}`);
+}
+
+function setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray) {
+    
+    if (colorlessArray.includes(context['user-id']) === false) {
+        console.log("null color: " + context.username)
+        let randomNumber = Math.floor(Math.random() * 14)
+        let newColor = defaultColors[randomNumber]
+        colorlessArray.push(context['user-id'])
+        console.log(colorlessArray.length)
+        let userId = context['user-id']
+        usersWithoutColor.push({
+            "id": userId,
+            "color": newColor
+        })
+        chatInfo.color = newColor
+        console.log(colorlessArray)
+        console.log(usersWithoutColor)
+
+    } else {
+        for(i = 1; i < usersWithoutColor.length; i++) {
+            console.log(usersWithoutColor[i])
+            if(usersWithoutColor[i].id === context['user-id']) {
+                chatInfo.color = usersWithoutColor[i].color
+            } else {
+                return
+            }
+        }
+    }
 }
 
 function getTwitchEmotes(context, chatInfo) {
