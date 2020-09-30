@@ -67,6 +67,7 @@ div {
 }
 
 .chatLines {
+    width: 90%;
     vertical-align: text-top;
     padding-bottom: 1em;
     margin-right: 1em;
