@@ -25,11 +25,8 @@ const wss = new WebSocket.Server({ server: server });
 
 wss.on('connection', (ws) => {
     let channels = [];
-    let usersWithoutColor = [{
-            "id": '000000000',
-            "color": '#000'
-        }];
-    let colorlessArray = ['000000000'];
+    let usersWithoutColor = [];
+    let colorlessArray = [];
 
     // Define configuration options
     const opts = {
@@ -104,7 +101,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'jcog', 'PangaeaPanga']
+        channelsSent = ['snowman', 'jcog', 'PangaeaPanga', 'xqcow']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -135,25 +132,17 @@ function setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorle
         let randomNumber = Math.floor(Math.random() * 14)
         let newColor = defaultColors[randomNumber]
         colorlessArray.push(context['user-id'])
-        console.log(colorlessArray.length)
         let userId = context['user-id']
         usersWithoutColor.push({
             "id": userId,
             "color": newColor
         })
         chatInfo.color = newColor
-        console.log(colorlessArray)
-        console.log(usersWithoutColor)
 
     } else {
-        for(i = 1; i < usersWithoutColor.length; i++) {
-            console.log(usersWithoutColor[i])
-            if(usersWithoutColor[i].id === context['user-id']) {
-                chatInfo.color = usersWithoutColor[i].color
-            } else {
-                return
-            }
-        }
+        let index = colorlessArray.indexOf(context['user-id'])
+        console.log(usersWithoutColor[index])
+        chatInfo.color = chatInfo.color = usersWithoutColor[index].color
     }
 }
 
