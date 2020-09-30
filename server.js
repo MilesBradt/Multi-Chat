@@ -126,9 +126,7 @@ function onConnectedHandler(addr, port) {
 }
 
 function setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray) {
-    
     if (colorlessArray.includes(context['user-id']) === false) {
-        console.log("null color: " + context.username)
         let randomNumber = Math.floor(Math.random() * 14)
         let newColor = defaultColors[randomNumber]
         colorlessArray.push(context['user-id'])
@@ -138,11 +136,9 @@ function setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorle
             "color": newColor
         })
         chatInfo.color = newColor
-
     } else {
         let index = colorlessArray.indexOf(context['user-id'])
-        console.log(usersWithoutColor[index])
-        chatInfo.color = chatInfo.color = usersWithoutColor[index].color
+        chatInfo.color = usersWithoutColor[index].color
     }
 }
 
