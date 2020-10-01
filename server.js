@@ -79,6 +79,7 @@ wss.on('connection', (ws) => {
             emotes: [],
             badges: []
         }
+        console.log(context)
 
         if (context.color === null) {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
@@ -241,63 +242,66 @@ async function getFFZGlobalEmotes() {
 
 function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
     let tokenLength = emoteToken.length
-        let textArray = [];
+    let textArray = [];
 
-        for (let i = 0; i < message.length; i++) {
-            textArray.push(message[i])
+    for (let i = 0; i < message.length; i++) {
+        textArray.push(message[i])
+    }
+
+    let firstStart = emoteToken[0].startIndex
+    let lastEnd = emoteToken[tokenLength - 1].endIndex
+    let nextIndexArray = [];
+
+    for (let i = 1; i < emoteToken.length; i++) {
+        nextIndexArray.push(emoteToken[i].startIndex)
+    }
+
+    if (firstStart !== 0) {
+        let startTextArray = [];
+        for (j = 0; j < firstStart; j++) {
+            startTextArray.push(textArray[j])
         }
+        chatInfo.message.push({
+            "type": "text",
+            "text": startTextArray.join('')
+        })
+    }
 
-        let firstStart = emoteToken[0].startIndex
-        let lastEnd = emoteToken[tokenLength - 1].endIndex
-        let nextIndexArray = [];
-
-        for (let i = 1; i < emoteToken.length; i++) {
-            nextIndexArray.push(emoteToken[i].startIndex)
+    for (const i in emoteToken) {
+        let typeEmoteArray = [];
+        for (j = emoteToken[i].startIndex; j <= emoteToken[i].endIndex; j++) {
+            typeEmoteArray.push(textArray[j])
         }
+        chatInfo.message.push({
+            "type": "emote",
+            "id": emoteToken[i].emoteId,
+            "text": typeEmoteArray.join('')
+        })
 
-        if (firstStart !== 0) {
-            let startTextArray = [];
-            for (j = 0; j < firstStart; j++) {
-                startTextArray.push(textArray[j])
-            }
-            chatInfo.message.push({
-                "type": "text",
-                "text": startTextArray.join('')
-            })
+        let betweenTextArray = [];
+        for (j = (emoteToken[i].endIndex + 1); j < nextIndexArray[i]; j++) {
+            betweenTextArray.push(textArray[j])
         }
-
-        for (const i in emoteToken) {
-            let typeEmoteArray = [];
-            for (j = emoteToken[i].startIndex; j <= emoteToken[i].endIndex; j++) {
-                typeEmoteArray.push(textArray[j])
-            }
-            chatInfo.message.push({
-                "type": "emote",
-                "id": emoteToken[i].emoteId,
-                "text": typeEmoteArray.join('')
-            })
-
-            let betweenTextArray = [];
-            for (j = (emoteToken[i].endIndex + 1); j < nextIndexArray[i]; j++) {
-                betweenTextArray.push(textArray[j])
-            }
+        if (betweenTextArray.length > 0) {
             chatInfo.message.push({
                 "type": "text",
                 "text": betweenTextArray.join('')
             })
-            
         }
+    }
 
-        let endTextArray = [];
-            for (j = lastEnd + 1; j <= textArray.length; j++) {
-                endTextArray.push(textArray[j])
-            }
-            chatInfo.message.push({
-                "type": "text",
-                "text": endTextArray.join('')
-            })
-        
-        return chatInfo
+    let endTextArray = [];
+    for (j = lastEnd + 1; j <= textArray.length; j++) {
+        endTextArray.push(textArray[j])
+    }
+    if (endTextArray[0]) {
+        console.log("it got here")
+        chatInfo.message.push({
+            "type": "text",
+            "text": endTextArray.join('')
+        })
+    }
+    return chatInfo
 }
 
 function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
