@@ -80,10 +80,10 @@ wss.on('connection', (ws) => {
             badges: []
         }
 
-        if(context.color === null) {
+        if (context.color === null) {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
         }
-        
+
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
         if (context.badges === null) {
@@ -92,16 +92,17 @@ wss.on('connection', (ws) => {
             let getBadges = getTwitchBadges(context, chatInfo)
             getBadges.then(() => {
                 sendMessageToClient(context, chatInfo, message, emoteToken, ws)
-            }).catch(() => {
-                console.log("error...somewhere")
-                console.log(context)
             })
+            // .catch(() => {
+            //     console.log("error...somewhere")
+            //     console.log(context)
+            // })
         }
     })
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'jcog', 'PangaeaPanga', 'xqcow']
+        channelsSent = ['snowman', 'jcog', 'PangaeaPanga']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -232,11 +233,71 @@ async function getTwitchBadges(context, chatInfo) {
     }
 }
 
-
 async function getFFZGlobalEmotes() {
     const url = 'https://api.frankerfacez.com/v1/set/global'
     let ffzAPI = await callAPI(url)
     // console.log(ffzAPI.sets['3'])
+}
+
+function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
+    let tokenLength = emoteToken.length
+        let textArray = [];
+
+        for (let i = 0; i < message.length; i++) {
+            textArray.push(message[i])
+        }
+
+        let firstStart = emoteToken[0].startIndex
+        let lastEnd = emoteToken[tokenLength - 1].endIndex
+        let nextIndexArray = [];
+
+        for (let i = 1; i < emoteToken.length; i++) {
+            nextIndexArray.push(emoteToken[i].startIndex)
+        }
+
+        if (firstStart !== 0) {
+            let startTextArray = [];
+            for (j = 0; j < firstStart; j++) {
+                startTextArray.push(textArray[j])
+            }
+            chatInfo.message.push({
+                "type": "text",
+                "text": startTextArray.join('')
+            })
+        }
+
+        for (const i in emoteToken) {
+            let typeEmoteArray = [];
+            for (j = emoteToken[i].startIndex; j <= emoteToken[i].endIndex; j++) {
+                typeEmoteArray.push(textArray[j])
+            }
+            chatInfo.message.push({
+                "type": "emote",
+                "id": emoteToken[i].emoteId,
+                "text": typeEmoteArray.join('')
+            })
+
+            let betweenTextArray = [];
+            for (j = (emoteToken[i].endIndex + 1); j < nextIndexArray[i]; j++) {
+                betweenTextArray.push(textArray[j])
+            }
+            chatInfo.message.push({
+                "type": "text",
+                "text": betweenTextArray.join('')
+            })
+            
+        }
+
+        let endTextArray = [];
+            for (j = lastEnd + 1; j <= textArray.length; j++) {
+                endTextArray.push(textArray[j])
+            }
+            chatInfo.message.push({
+                "type": "text",
+                "text": endTextArray.join('')
+            })
+        
+        return chatInfo
 }
 
 function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
@@ -248,62 +309,11 @@ function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
         ws.send(JSON.stringify(chatInfo))
     }
 
+    // If statement not needed but will need this for FFZ and BTTV support later on
     if (context.emotes !== null) {
-        let textArray = [];
-        let messageToken = [];
-        for (let i = 0; i < message.length; i++) {
-            textArray.push(message[i])
-        }
-
-        let startTextArray = [];
-        for (j = 0; j < emoteToken[0].startIndex; j++) {
-            startTextArray.push(textArray[j])
-        }
-        chatInfo.message.push({
-            "type": "text",
-            "text": startTextArray.join('')
-        })
-
-        let nextIndexArray = [];
-
-        for (let i = 1; i < emoteToken.length; i++) {
-            nextIndexArray.push(emoteToken[i].startIndex)
-        }
-
-        for (const i in emoteToken) {
-
-            let typeEmoteArray = [];
-
-            for (j = emoteToken[i].startIndex; j <= emoteToken[i].endIndex; j++) {
-                typeEmoteArray.push(textArray[j])
-            }
-            chatInfo.message.push({
-                "type": "emote",
-                "id": emoteToken[i].emoteId,
-                "text": typeEmoteArray.join('')
-            })
-
-            if (nextIndexArray.length !== 0) {
-                let typeTextArray = [];
-                for (j = (emoteToken[i].endIndex + 1); j < nextIndexArray[i]; j++) {
-                    typeTextArray.push(textArray[j])
-                }
-                chatInfo.message.push({
-                    "type": "text",
-                    "text": typeTextArray.join('')
-                })
-            } else if (nextIndexArray.length == 0) {
-                let typeTextArray = [];
-                for (j = (emoteToken[i].endIndex + 1); j < textArray.length; j++) {
-                    typeTextArray.push(textArray[j])
-                }
-                chatInfo.message.push({
-                    "type": "text",
-                    "text": typeTextArray.join('')
-                })
-            }
-        }
-        ws.send(JSON.stringify(chatInfo))
+        let newToken = createMessageTokenForEmotes(chatInfo, message, emoteToken)
+        console.log(newToken.message)
+        ws.send(JSON.stringify(newToken))
     }
 }
 
