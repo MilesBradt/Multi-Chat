@@ -92,7 +92,14 @@ wss.on('connection', (ws) => {
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
         if (context.badges === null) {
-            sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+            ffzGlobalEmotes.then((ffzEmotes) => {
+                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                let ffzRoomEmotes = getFFZRoomEmotes(channel)
+                ffzRoomEmotes.then((roomEmotes) => {
+                    emoteToken = createFFZEmoteToken(roomEmotes, message, chatInfo)
+                    sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                })
+            })
         } else {
             getGlobalTwitchBadges.then((globalBadges) => {
                 let getChannelBadges = getTwitchChannelBadges(context)
@@ -100,7 +107,7 @@ wss.on('connection', (ws) => {
                     sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
                     ffzGlobalEmotes.then((ffzEmotes) => {
                         emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                        let ffzRoomEmotes = getFFZRoomEmotes(context)
+                        let ffzRoomEmotes = getFFZRoomEmotes(channel)
                         ffzRoomEmotes.then((roomEmotes) => {
                             emoteToken = createFFZEmoteToken(roomEmotes, message, chatInfo)
                             sendMessageToClient(context, chatInfo, message, emoteToken, ws)
@@ -267,8 +274,8 @@ async function getFFZGlobalEmotes() {
     return ffzGlobalEmotes
 }
 
-async function getFFZRoomEmotes(context) {
-    const url = "https://api.frankerfacez.com/v1/room/id/" + context['room-id']
+async function getFFZRoomEmotes(channel) {
+    const url = "https://api.frankerfacez.com/v1/room/" + channel
     let ffzAPI = await callAPI(url)
     let ffzEmotes = [];
     for (i in ffzAPI.sets) {
@@ -295,12 +302,11 @@ function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
     for (i in messageArray) {
         for (j in ffzEmoteList) {
             for (k in ffzEmoteList[j]) {
-                if (messageArray[i] === ffzEmoteList[j][k].name) {
+                if (messageArray[i] == ffzEmoteList[j][k].name) {
                     chatInfo.ffz = true
                     startingIndex = message.indexOf(ffzEmoteList[j][k].name, endingIndex)
                     endingIndex = startingIndex + ffzEmoteList[j][k].name.length
                     chatInfo.emotes.push({
-                        // [ffzEmoteList[j][k].id]: [startingIndex + "-" + endingIndex]
                         "emoteId": ffzEmoteList[j][k].id.toString(),
                         "startIndex": startingIndex ,
                         "endIndex": endingIndex,
