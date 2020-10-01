@@ -68,7 +68,6 @@ wss.on('connection', (ws) => {
         const message = msg.trim();
         const channel = target.slice(1)
         const username = context['display-name']
-        let lastEnd;
 
         const chatInfo = {
             channel: channel,
@@ -84,6 +83,9 @@ wss.on('connection', (ws) => {
         if (context.color === null) {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
         }
+
+    
+        getFFZGlobalEmotes()
 
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
@@ -119,7 +121,6 @@ function onMessageHandler(target, context, msg, self) {
     if (self) {
         return;
     }
-
 }
 
 // Called every time the bot connects to Twitch chat
@@ -237,7 +238,10 @@ async function getTwitchBadges(context, chatInfo) {
 async function getFFZGlobalEmotes() {
     const url = 'https://api.frankerfacez.com/v1/set/global'
     let ffzAPI = await callAPI(url)
-    // console.log(ffzAPI.sets['3'])
+    for(i in ffzAPI.sets) {
+        console.log(ffzAPI.sets[i])
+    }
+    
 }
 
 function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
@@ -295,7 +299,6 @@ function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
         endTextArray.push(textArray[j])
     }
     if (endTextArray[0]) {
-        console.log("it got here")
         chatInfo.message.push({
             "type": "text",
             "text": endTextArray.join('')
