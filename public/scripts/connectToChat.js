@@ -96,7 +96,11 @@ function postTwitchEmotes(chatLog, messagesArray) {
     const messages = chatLog.message
     for (const i in messages) {
         if (messages[i].type === "emote") {
-            messagesArray.push("<img class='emotes' src=https://static-cdn.jtvnw.net/emoticons/v1/" + messages[i].id + "/1.0></img>")
+            if(messages[i].from === "ffz") {
+                messagesArray.push("<img class='emotes' src=" + messages[i].url + ">  </img>")
+            } else {
+                messagesArray.push("<img class='emotes' src=https://static-cdn.jtvnw.net/emoticons/v1/" + messages[i].id + "/1.0></img>")
+            }
         }
         if (messages[i].type === "text") {
             messagesArray.push(messages[i].text)

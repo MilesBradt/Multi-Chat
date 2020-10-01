@@ -25,7 +25,8 @@ console.log("HTML hosted at http://localhost:8080");
 const wss = new WebSocket.Server({ server: server });
 
 wss.on('connection', (ws) => {
-    let globalTwitchBadges = getTwitchBadges()
+    let getGlobalTwitchBadges = getTwitchBadges()
+    let ffzGlobalEmotes = getFFZGlobalEmotes();
 
     let channels = [];
     let usersWithoutColor = [];
@@ -80,13 +81,12 @@ wss.on('connection', (ws) => {
             color: context.color,
             id: context['user-id'],
             emotes: [],
-            badges: []
+            badges: [],
+            ffz: false
         }
 
-        // let ffzEmotes = getFFZGlobalEmotes();
+        // 
         // let globalTwitchBadges = getTwitchBadges();
-
-        
 
         if (context.color === null) {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
@@ -94,22 +94,23 @@ wss.on('connection', (ws) => {
 
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
+        console.log(emoteToken)
+
         if (context.badges === null) {
             sendMessageToClient(context, chatInfo, message, emoteToken, ws)
         } else {
-            globalTwitchBadges.then((globalBadges) => {
+            getGlobalTwitchBadges.then((globalBadges) => {
                 let getChannelBadges = getTwitchChannelBadges(context)
                 getChannelBadges.then((channelBadges) => {
                     sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
-                    sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                    ffzGlobalEmotes.then((ffzEmotes) => {
+                        console.log(context)
+                        emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                        console.log(emoteToken)
+                        sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                    })
                 })
             })
-
-            
-            // .catch(() => {
-            //     console.log("error...somewhere")
-            //     console.log(context)
-            // })
         }
     })
 
@@ -169,7 +170,8 @@ function getTwitchEmotes(context, chatInfo) {
             chatInfo.emotes.push({
                 "emoteId": id,
                 "startIndex": parseInt(startandEnd[0]),
-                "endIndex": parseInt(startandEnd[1])
+                "endIndex": parseInt(startandEnd[1]),
+                "type": "twitch"
             })
         })
     }
@@ -191,7 +193,6 @@ function callAPI(url, context) {
 }
 
 async function sortTwitchBadges(context, chatInfo, globalAPI, channelAPI) {
-
     const channelBadges = Object.getOwnPropertyNames(channelAPI.badge_sets)
     const globalBadges = Object.getOwnPropertyNames(globalAPI.badge_sets)
 
@@ -255,7 +256,7 @@ async function getTwitchChannelBadges(context) {
     return channelAPI
 }
 
-async function getFFZGlobalEmotes(message) {
+async function getFFZGlobalEmotes() {
     const url = 'https://api.frankerfacez.com/v1/set/global'
     let ffzAPI = await callAPI(url)
     let ffzGlobalEmotes = [];
@@ -267,6 +268,43 @@ async function getFFZGlobalEmotes(message) {
         })
     }
     return ffzGlobalEmotes
+}
+
+function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
+    let messageArray = message.split(' ');
+    let ffzEmoteList = []
+    let startingIndex;
+    let endingIndex;
+
+    for (i in ffzEmotes) {
+        ffzEmoteList.push(ffzEmotes[i].emotes)
+    }
+
+    // This sucks, fix it later...
+    for (i in messageArray) {
+        for (j in ffzEmoteList) {
+            for (k in ffzEmoteList[j]) {
+                if (messageArray[i] === ffzEmoteList[j][k].name) {
+                    console.log("ffz emote found!")
+                    chatInfo.ffz = true
+                    startingIndex = message.indexOf(ffzEmoteList[j][k].name, endingIndex)
+                    endingIndex = startingIndex + ffzEmoteList[j][k].name.length
+                    chatInfo.emotes.push({
+                        // [ffzEmoteList[j][k].id]: [startingIndex + "-" + endingIndex]
+                        "emoteId": ffzEmoteList[j][k].id.toString(),
+                        "startIndex": startingIndex ,
+                        "endIndex": endingIndex,
+                        "type": "ffz",
+                        "url": ffzEmoteList[j][k].urls[1]
+                    })
+                    console.log("start index: " + startingIndex)
+                    console.log("end index: " + endingIndex)
+                }
+            }
+        }
+    }
+    const sortedByIndex = chatInfo.emotes.sort(dynamicSort("startIndex"))
+    return sortedByIndex
 }
 
 function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
@@ -304,7 +342,9 @@ function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
         chatInfo.message.push({
             "type": "emote",
             "id": emoteToken[i].emoteId,
-            "text": typeEmoteArray.join('')
+            "text": typeEmoteArray.join(''),
+            "from": emoteToken[i].type,
+            "url": emoteToken[i].url
         })
 
         let betweenTextArray = [];
@@ -333,7 +373,7 @@ function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
 }
 
 function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
-    if (context.emotes === null) {
+    if (context.emotes === null && chatInfo.ffz !== true) {
         chatInfo.message.push({
             "type": "text",
             "text": message
@@ -341,8 +381,7 @@ function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
         ws.send(JSON.stringify(chatInfo))
     }
 
-    // If statement not needed but will need this for FFZ and BTTV support later on
-    if (context.emotes !== null) {
+    else {
         let newToken = createMessageTokenForEmotes(chatInfo, message, emoteToken)
         console.log(newToken.message)
         ws.send(JSON.stringify(newToken))
