@@ -85,16 +85,11 @@ wss.on('connection', (ws) => {
             ffz: false
         }
 
-        // 
-        // let globalTwitchBadges = getTwitchBadges();
-
         if (context.color === null) {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
         }
 
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
-
-        console.log(emoteToken)
 
         if (context.badges === null) {
             sendMessageToClient(context, chatInfo, message, emoteToken, ws)
@@ -104,10 +99,12 @@ wss.on('connection', (ws) => {
                 getChannelBadges.then((channelBadges) => {
                     sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
                     ffzGlobalEmotes.then((ffzEmotes) => {
-                        console.log(context)
                         emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                        console.log(emoteToken)
-                        sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                        let ffzRoomEmotes = getFFZRoomEmotes(context)
+                        ffzRoomEmotes.then((roomEmotes) => {
+                            emoteToken = createFFZEmoteToken(roomEmotes, message, chatInfo)
+                            sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                        })
                     })
                 })
             })
@@ -117,7 +114,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman']
+        channelsSent = ['snowman', 'jcog', 'pangaeapanga']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -270,6 +267,20 @@ async function getFFZGlobalEmotes() {
     return ffzGlobalEmotes
 }
 
+async function getFFZRoomEmotes(context) {
+    const url = "https://api.frankerfacez.com/v1/room/id/" + context['room-id']
+    let ffzAPI = await callAPI(url)
+    let ffzEmotes = [];
+    for (i in ffzAPI.sets) {
+        ffzEmotes.push({
+            "title": ffzAPI.sets[i].title,
+            "id": ffzAPI.sets[i].id,
+            "emotes": ffzAPI.sets[i].emoticons
+        })
+    }
+    return ffzEmotes
+}
+
 function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
     let messageArray = message.split(' ');
     let ffzEmoteList = []
@@ -285,7 +296,6 @@ function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
         for (j in ffzEmoteList) {
             for (k in ffzEmoteList[j]) {
                 if (messageArray[i] === ffzEmoteList[j][k].name) {
-                    console.log("ffz emote found!")
                     chatInfo.ffz = true
                     startingIndex = message.indexOf(ffzEmoteList[j][k].name, endingIndex)
                     endingIndex = startingIndex + ffzEmoteList[j][k].name.length
@@ -297,8 +307,6 @@ function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
                         "type": "ffz",
                         "url": ffzEmoteList[j][k].urls[1]
                     })
-                    console.log("start index: " + startingIndex)
-                    console.log("end index: " + endingIndex)
                 }
             }
         }
@@ -383,7 +391,6 @@ function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
 
     else {
         let newToken = createMessageTokenForEmotes(chatInfo, message, emoteToken)
-        console.log(newToken.message)
         ws.send(JSON.stringify(newToken))
     }
 }
