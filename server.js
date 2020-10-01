@@ -11,6 +11,7 @@ const server = http.createServer(app);
 const defaultColors = ['#ff0000', '#0000ff', '#008000', '#b22222', '#ff7f50', '#ff7f50', '#ff4500', '#2e8b57', '#daa520', '#d2691e', '#5f9ea0', '#1e90ff', '#ff69b4', '#8a2be2', '#00ff7f']
 
 
+
 app.use(express.static('public'))
 
 // viewed at http://localhost:8080
@@ -24,6 +25,8 @@ console.log("HTML hosted at http://localhost:8080");
 const wss = new WebSocket.Server({ server: server });
 
 wss.on('connection', (ws) => {
+    let globalTwitchBadges = getTwitchBadges()
+
     let channels = [];
     let usersWithoutColor = [];
     let colorlessArray = [];
@@ -44,6 +47,7 @@ wss.on('connection', (ws) => {
 
     // Connect to Twitch:
     client.connect();
+
     client.on("clearchat", (channel) => {
         console.log(channel)
     })
@@ -78,34 +82,41 @@ wss.on('connection', (ws) => {
             emotes: [],
             badges: []
         }
-        console.log(context)
+
+        // let ffzEmotes = getFFZGlobalEmotes();
+        // let globalTwitchBadges = getTwitchBadges();
+
+        
 
         if (context.color === null) {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
         }
-
-    
-        getFFZGlobalEmotes()
 
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
         if (context.badges === null) {
             sendMessageToClient(context, chatInfo, message, emoteToken, ws)
         } else {
-            let getBadges = getTwitchBadges(context, chatInfo)
-            getBadges.then(() => {
-                sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+            globalTwitchBadges.then((globalBadges) => {
+                let getChannelBadges = getTwitchChannelBadges(context)
+                getChannelBadges.then((channelBadges) => {
+                    sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
+                    sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                })
             })
+
+            
             // .catch(() => {
             //     console.log("error...somewhere")
             //     console.log(context)
             // })
         }
     })
+
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'jcog', 'PangaeaPanga']
+        channelsSent = ['snowman']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -114,6 +125,7 @@ wss.on('connection', (ws) => {
     });
     //send immediatly a feedback to the incoming connection    
     ws.send('Hi there, I am a WebSocket server');
+
 });
 
 // Called every time a message comes in
@@ -178,17 +190,10 @@ function callAPI(url, context) {
         })
 }
 
-async function getTwitchBadges(context, chatInfo) {
-
-    let globalUrl = "https://badges.twitch.tv/v1/badges/global/display"
-    let globalAPI = await callAPI(globalUrl, context)
-
-    const globalBadges = Object.getOwnPropertyNames(globalAPI.badge_sets)
-
-    let url = "https://badges.twitch.tv/v1/badges/channels/" + context["room-id"] + "/display"
-    let channelAPI = await callAPI(url)
+async function sortTwitchBadges(context, chatInfo, globalAPI, channelAPI) {
 
     const channelBadges = Object.getOwnPropertyNames(channelAPI.badge_sets)
+    const globalBadges = Object.getOwnPropertyNames(globalAPI.badge_sets)
 
     let badgeTypes = Object.getOwnPropertyNames(context.badges)
     let badgeValues = Object.values(context.badges)
@@ -233,15 +238,35 @@ async function getTwitchBadges(context, chatInfo) {
             }
         }
     }
+
 }
 
-async function getFFZGlobalEmotes() {
+async function getTwitchBadges(context) {
+    let globalUrl = "https://badges.twitch.tv/v1/badges/global/display"
+    let globalAPI = await callAPI(globalUrl, context)
+
+    return globalAPI
+}
+
+async function getTwitchChannelBadges(context) {
+    let url = "https://badges.twitch.tv/v1/badges/channels/" + context["room-id"] + "/display"
+    let channelAPI = await callAPI(url)
+
+    return channelAPI
+}
+
+async function getFFZGlobalEmotes(message) {
     const url = 'https://api.frankerfacez.com/v1/set/global'
     let ffzAPI = await callAPI(url)
-    for(i in ffzAPI.sets) {
-        console.log(ffzAPI.sets[i])
+    let ffzGlobalEmotes = [];
+    for (i in ffzAPI.sets) {
+        ffzGlobalEmotes.push({
+            "title": ffzAPI.sets[i].title,
+            "id": ffzAPI.sets[i].id,
+            "emotes": ffzAPI.sets[i].emoticons
+        })
     }
-    
+    return ffzGlobalEmotes
 }
 
 function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
