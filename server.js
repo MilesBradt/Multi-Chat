@@ -290,33 +290,36 @@ async function getFFZRoomEmotes(channel) {
 
 function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
     let messageArray = message.split(' ');
-    let ffzEmoteList = []
+    let ffzEmoteList = [];
     let startingIndex;
-    let endingIndex;
+    let endingIndex = 0;
 
     for (i in ffzEmotes) {
         ffzEmoteList.push(ffzEmotes[i].emotes)
     }
 
-    // This sucks, fix it later...
-    for (i in messageArray) {
-        for (j in ffzEmoteList) {
-            for (k in ffzEmoteList[j]) {
-                if (messageArray[i] == ffzEmoteList[j][k].name) {
-                    chatInfo.ffz = true
-                    startingIndex = message.indexOf(ffzEmoteList[j][k].name, endingIndex)
-                    endingIndex = startingIndex + ffzEmoteList[j][k].name.length
-                    chatInfo.emotes.push({
-                        "emoteId": ffzEmoteList[j][k].id.toString(),
-                        "startIndex": startingIndex ,
-                        "endIndex": endingIndex,
-                        "type": "ffz",
-                        "url": ffzEmoteList[j][k].urls[1]
-                    })
-                }
+    function ffzFindIndex(name, id, url) {
+        chatInfo.ffz = true
+        for (let i = 0; i <= messageArray.length; i++) {
+            if (messageArray[i] === name) {
+                startingIndex = message.indexOf(name, endingIndex)
+                endingIndex = startingIndex + name.length
+                chatInfo.emotes.push({
+                    "emoteId": id,
+                    "startIndex": startingIndex,
+                    "endIndex": endingIndex,
+                    "type": "ffz",
+                    "url": url
+                })
             }
         }
     }
+
+    let emotes = ffzEmoteList.flat()
+    for (j in emotes) {
+        message.includes(emotes[j].name) ? ffzFindIndex(emotes[j].name, emotes[j].id, emotes[j].urls[1]) : null
+    }
+
     const sortedByIndex = chatInfo.emotes.sort(dynamicSort("startIndex"))
     return sortedByIndex
 }
