@@ -25,8 +25,9 @@ console.log("HTML hosted at http://localhost:8080");
 const wss = new WebSocket.Server({ server: server });
 
 wss.on('connection', (ws) => {
-    let getGlobalTwitchBadges = getTwitchBadges()
+    let getGlobalTwitchBadges = getTwitchBadges();
     let ffzGlobalEmotes = getFFZGlobalEmotes();
+    let bttvGlobalEmotes = getBTTVGlobalEmotes();
 
     let channels = [];
     let usersWithoutColor = [];
@@ -82,7 +83,8 @@ wss.on('connection', (ws) => {
             id: context['user-id'],
             emotes: [],
             badges: [],
-            ffz: false
+            ffz: false,
+            bttv: false
         }
 
         if (context.color === null) {
@@ -97,7 +99,14 @@ wss.on('connection', (ws) => {
                 let ffzRoomEmotes = getFFZRoomEmotes(channel)
                 ffzRoomEmotes.then((roomEmotes) => {
                     emoteToken = createFFZEmoteToken(roomEmotes, message, chatInfo)
-                    sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                    bttvGlobalEmotes.then((bttvEmotes) => {
+                        emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                        let bttvRoomEmotes = getBTTVRoomEmotes(context)
+                        bttvRoomEmotes.then((roomEmotes) => {
+                            emoteToken = createBTTVEmoteToken(roomEmotes, message, chatInfo)
+                            sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                        })
+                    })
                 })
             })
         } else {
@@ -110,7 +119,14 @@ wss.on('connection', (ws) => {
                         let ffzRoomEmotes = getFFZRoomEmotes(channel)
                         ffzRoomEmotes.then((roomEmotes) => {
                             emoteToken = createFFZEmoteToken(roomEmotes, message, chatInfo)
-                            sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                            bttvGlobalEmotes.then((bttvEmotes) => {
+                                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                                let bttvRoomEmotes = getBTTVRoomEmotes(context)
+                                bttvRoomEmotes.then((roomEmotes) => {
+                                    emoteToken = createBTTVEmoteToken(roomEmotes, message, chatInfo)
+                                    sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+                                })
+                            })
                         })
                     })
                 })
@@ -121,10 +137,11 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'jcog', 'pangaeapanga']
+        channelsSent = ['snowman', 'jcog', 'PangaeaPanga']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
+
         console.log(opts.channels)
         ws.send(`Hello, you sent -> ${message}`);
     });
@@ -175,7 +192,8 @@ function getTwitchEmotes(context, chatInfo) {
                 "emoteId": id,
                 "startIndex": parseInt(startandEnd[0]),
                 "endIndex": parseInt(startandEnd[1]),
-                "type": "twitch"
+                "type": "twitch",
+                "url": "https://static-cdn.jtvnw.net/emoticons/v1/" + id + "/1.0"
             })
         })
     }
@@ -280,6 +298,29 @@ async function getFFZRoomEmotes(channel) {
     return ffzEmotes
 }
 
+async function getBTTVGlobalEmotes() {
+    const url = 'https://api.betterttv.net/3/cached/emotes/global'
+    let bttvAPI = await callAPI(url)
+    let bttvEmotes = [];
+    for (i in bttvAPI) {
+        bttvEmotes.push(bttvAPI[i])
+    }
+    return bttvEmotes
+}
+
+async function getBTTVRoomEmotes(context) {
+    const url = 'https://api.betterttv.net/3/cached/users/twitch/' + context['room-id']
+    let bttvAPI = await callAPI(url)
+    let bttvEmotes = [];
+    for (i in bttvAPI.channelEmotes) {
+        bttvEmotes.push(bttvAPI.channelEmotes[i])
+    }
+    for (i in bttvAPI.sharedEmotes) {
+        bttvEmotes.push(bttvAPI.sharedEmotes[i])
+    }
+    return bttvEmotes
+}
+
 function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
     let emotes = ffzEmotes.flat()
 
@@ -289,9 +330,9 @@ function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
         while (index != -1) {
             endingIndex = index + emotes[j].name.length
             let nextCharacter = message[endingIndex]
-            let lastCharacter = message[index - 1] 
+            let lastCharacter = message[index - 1]
 
-            if(isEmoteEnding(nextCharacter) && isEmoteEnding(lastCharacter)){
+            if (isEmoteEnding(nextCharacter) && isEmoteEnding(lastCharacter)) {
                 chatInfo.ffz = true
                 chatInfo.emotes.push({
                     "emoteId": emotes[j].id,
@@ -300,8 +341,35 @@ function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
                     "type": "ffz",
                     "url": emotes[j].urls[1]
                 })
-            } 
+            }
             index = (index > 0 ? message.lastIndexOf(emotes[j].name, index - 1) : -1)
+        }
+    }
+
+    const sortedByIndex = chatInfo.emotes.sort(dynamicSort("startIndex"))
+    return sortedByIndex
+}
+
+function createBTTVEmoteToken(bttvEmotes, message, chatInfo) {
+    let emotes = bttvEmotes
+    for (j in emotes) {
+        let index = message.lastIndexOf(emotes[j].code)
+        while (index != -1) {
+            endingIndex = index + emotes[j].code.length
+            let nextCharacter = message[endingIndex]
+            let lastCharacter = message[index - 1]
+
+            if (isEmoteEnding(nextCharacter) && isEmoteEnding(lastCharacter)) {
+                chatInfo.bttv = true
+                chatInfo.emotes.push({
+                    "emoteId": emotes[j].id,
+                    "startIndex": index,
+                    "endIndex": endingIndex - 1,
+                    "type": "bttv",
+                    "url": "https://cdn.betterttv.net/emote/" + emotes[j].id + "/1x"
+                })
+            }
+            index = (index > 0 ? message.lastIndexOf(emotes[j].code, index - 1) : -1)
         }
     }
 
@@ -375,14 +443,13 @@ function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
 }
 
 function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
-    if (context.emotes === null && chatInfo.ffz !== true) {
+    if (context.emotes === null && chatInfo.ffz !== true && chatInfo.bttv !== true) {
         chatInfo.message.push({
             "type": "text",
             "text": message
         })
         ws.send(JSON.stringify(chatInfo))
     }
-
     else {
         let newToken = createMessageTokenForEmotes(chatInfo, message, emoteToken)
         ws.send(JSON.stringify(newToken))
