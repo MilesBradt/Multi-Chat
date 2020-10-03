@@ -84,7 +84,7 @@ function createMessageSpan(chatLog) {
     const messageSpan = document.createElement("span");
     messageSpan.className = "messages";
     messageSpan.id = chatLog.id;
-    messageSpan.style.color = "#e0e0e0";
+    messageSpan.style.color = "#fff";
     messageSpan.style.fontWeight = "normal";
     const messagesArray = [];
     postTwitchEmotes(chatLog, messagesArray)
