@@ -121,7 +121,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'jcog', 'pangaeapanga', 'sleepy']
+        channelsSent = ['snowman', 'jcog', 'pangaeapanga']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -265,11 +265,7 @@ async function getFFZGlobalEmotes() {
     let ffzAPI = await callAPI(url)
     let ffzGlobalEmotes = [];
     for (i in ffzAPI.sets) {
-        ffzGlobalEmotes.push({
-            "title": ffzAPI.sets[i].title,
-            "id": ffzAPI.sets[i].id,
-            "emotes": ffzAPI.sets[i].emoticons
-        })
+        ffzGlobalEmotes.push(ffzAPI.sets[i].emoticons)
     }
     return ffzGlobalEmotes
 }
@@ -279,45 +275,34 @@ async function getFFZRoomEmotes(channel) {
     let ffzAPI = await callAPI(url)
     let ffzEmotes = [];
     for (i in ffzAPI.sets) {
-        ffzEmotes.push({
-            "title": ffzAPI.sets[i].title,
-            "id": ffzAPI.sets[i].id,
-            "emotes": ffzAPI.sets[i].emoticons
-        })
+        ffzEmotes.push(ffzAPI.sets[i].emoticons)
     }
     return ffzEmotes
 }
 
 function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
-    let messageArray = message.split(' ');
-    let ffzEmoteList = [];
-    let startingIndex;
-    let endingIndex = 0;
+    let emotes = ffzEmotes.flat()
 
-    for (i in ffzEmotes) {
-        ffzEmoteList.push(ffzEmotes[i].emotes)
-    }
-
-    function ffzFindIndex(name, id, url) {
-        chatInfo.ffz = true
-        for (let i = 0; i <= messageArray.length; i++) {
-            if (messageArray[i] === name) {
-                startingIndex = message.indexOf(name, endingIndex)
-                endingIndex = startingIndex + name.length
-                chatInfo.emotes.push({
-                    "emoteId": id,
-                    "startIndex": startingIndex,
-                    "endIndex": endingIndex,
-                    "type": "ffz",
-                    "url": url
-                })
-            }
-        }
-    }
-
-    let emotes = ffzEmoteList.flat()
+    // "emotes[j].urls" should include all emote sizes later
     for (j in emotes) {
-        message.includes(emotes[j].name) ? ffzFindIndex(emotes[j].name, emotes[j].id, emotes[j].urls[1]) : null
+        let index = message.lastIndexOf(emotes[j].name)
+        while (index != -1) {
+            endingIndex = index + emotes[j].name.length
+            let nextCharacter = message[endingIndex]
+            let lastCharacter = message[index - 1] 
+
+            if(isEmoteEnding(nextCharacter) && isEmoteEnding(lastCharacter)){
+                chatInfo.ffz = true
+                chatInfo.emotes.push({
+                    "emoteId": emotes[j].id,
+                    "startIndex": index,
+                    "endIndex": endingIndex - 1,
+                    "type": "ffz",
+                    "url": emotes[j].urls[1]
+                })
+            } 
+            index = (index > 0 ? message.lastIndexOf(emotes[j].name, index - 1) : -1)
+        }
     }
 
     const sortedByIndex = chatInfo.emotes.sort(dynamicSort("startIndex"))
@@ -402,6 +387,10 @@ function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
         let newToken = createMessageTokenForEmotes(chatInfo, message, emoteToken)
         ws.send(JSON.stringify(newToken))
     }
+}
+
+function isEmoteEnding(character) {
+    return (character === undefined || character === " " || character === "." || character === "," || character === "!") ? true : false
 }
 
 // Thank you, Ege Özcan: https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
