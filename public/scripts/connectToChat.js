@@ -72,10 +72,24 @@ function createBadges(chatLog, chatLine) {
 function createUserNameSpan(chatLog, chatLine, defaultColors) {
     const usernameSpan = document.createElement("span");
     usernameSpan.id = chatLog.id;
-    usernameSpan.innerHTML = chatLog.username + "<span class='beforeMessage'>: </span>";
-    chatLog.color = ca.process(chatLog.color)
-    usernameSpan.style.color = chatLog.color;
-    usernameSpan.style.fontWeight = "bold";
+    if (chatLog.display.toLowerCase() === chatLog.username.toLowerCase()) {
+        usernameSpan.innerHTML = chatLog.username + "<span class='beforeMessage'>: </span>";
+        chatLog.color = ca.process(chatLog.color)
+        usernameSpan.style.color = chatLog.color;
+        usernameSpan.style.fontWeight = "bold";
+    } else {
+        usernameSpan.innerHTML = chatLog.username;
+        const displayNameSpan = document.createElement("span")
+        displayNameSpan.innerHTML = " (" + chatLog.display + ")" + "<span class='beforeMessage'>: </span>"
+        let newColor = tinycolor(ca.process(chatLog.color))
+        displayNameSpan.style.color = ca.process(newColor.darken(25).toString())
+        displayNameSpan.style.fontWeight = "normal"
+        usernameSpan.appendChild(displayNameSpan)
+        chatLog.color = ca.process(chatLog.color)
+        usernameSpan.style.color = chatLog.color;
+        usernameSpan.style.fontWeight = "bold";
+    }
+
 
     chatLine.appendChild(usernameSpan)
 }

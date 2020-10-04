@@ -73,11 +73,14 @@ wss.on('connection', (ws) => {
     client.on('message', (target, context, msg, self) => {
         const message = msg.trim();
         const channel = target.slice(1)
+        // I know these are backwards, I'll fix it later
         const username = context['display-name']
+        const display = context.username
 
         const chatInfo = {
             channel: channel,
             username: username,
+            display: display,
             message: [],
             color: context.color,
             id: context['user-id'],
