@@ -15,17 +15,16 @@ function connectToChat(channel) {
 
     // Listen for messages
     socket.addEventListener('message', function (event) {
-        let test = JSON.parse(event.data)
+        let token = JSON.parse(event.data)
 
-        if(test.event === "message") {
-            postToDOM(event)
+        if(token.event === "message") {
+            postToDOM(token)
         }
-        else if (test[0].event === "timeout" || test[0].event === "ban") {
-            handleTimeout(event)
+        else if (token.event === "timeout" || token.event === "ban") {
+            handleTimeout(token)
         } 
-        else if (test[0].event === "delete") {
-            console.log("it got here")
-            handleDeletedMessage(event)
+        else if (token.event === "delete") {
+            handleDeletedMessage(token)
         }
     });
 
@@ -35,9 +34,8 @@ function hoveringOverChat(bool) {
     hovering = bool
 }
 
-function handleTimeout(event) {
-    let token = JSON.parse(event.data)
-    let thisToken = document.getElementsByClassName(token[0].user)
+function handleTimeout(token) {
+    let thisToken = document.getElementsByClassName(token.user)
     for (var i = 0; i < thisToken.length; ++i) {
         console.log(i)
         thisToken[i].textContent = "<message deleted>"
@@ -45,23 +43,21 @@ function handleTimeout(event) {
     }
 }
 
-function handleDeletedMessage(event) {
-    let token = JSON.parse(event.data)
+function handleDeletedMessage(token) {
     let message = document.getElementById(token[0]['message-id'])
     message.textContent = "<message deleted>"
     message.style.color = '#979fab'
 }
 
-function postToDOM(event) {
-    const chatLog = JSON.parse(event.data);
+function postToDOM(token) {
     const chat = document.getElementById('chat');
-    console.log(chatLog)
+    console.log(token)
 
-    createChannelLine(chatLog)
+    createChannelLine(token)
     let chatLine = createChatLine()
-    createBadges(chatLog, chatLine)
-    createUserNameSpan(chatLog, chatLine)
-    let messageSpan = createMessageSpan(chatLog)
+    createBadges(token, chatLine)
+    createUserNameSpan(token, chatLine)
+    let messageSpan = createMessageSpan(token)
 
     chatLine.appendChild(messageSpan)
 
@@ -82,17 +78,17 @@ function createChatLine() {
     return chatLine
 }
 
-function createChannelLine(chatLog) {
+function createChannelLine(token) {
     const channelLine = document.createElement("div")
     channelLine.id = "channelLine"
     channelLine.className = "channelLines"
-    channelLine.innerHTML = chatLog.channel + "'s chat"
+    channelLine.innerHTML = token.channel + "'s chat"
     document.getElementById("chat").appendChild(channelLine)
     return channelLine
 }
 
-function createBadges(chatLog, chatLine) {
-    chatLog.badges.forEach(function (e) {
+function createBadges(token, chatLine) {
+    token.badges.forEach(function (e) {
         const img = document.createElement("IMG");
         img.id = e.id
         img.className = "badges"
@@ -101,43 +97,43 @@ function createBadges(chatLog, chatLine) {
     })
 }
 
-function createUserNameSpan(chatLog, chatLine, defaultColors) {
+function createUserNameSpan(token, chatLine) {
     const usernameSpan = document.createElement("span");
-    if (chatLog.display.toLowerCase() === chatLog.username.toLowerCase()) {
-        usernameSpan.innerHTML = chatLog.username + "<span class='beforeMessage'>: </span>";
-        chatLog.color = ca.process(chatLog.color)
-        usernameSpan.style.color = chatLog.color;
+    if (token.display.toLowerCase() === token.username.toLowerCase()) {
+        usernameSpan.innerHTML = token.username + "<span class='beforeMessage'>: </span>";
+        token.color = ca.process(token.color)
+        usernameSpan.style.color = token.color;
         usernameSpan.style.fontWeight = "bold";
     } else {
-        usernameSpan.innerHTML = chatLog.username;
+        usernameSpan.innerHTML = token.username;
         const displayNameSpan = document.createElement("span")
-        displayNameSpan.innerHTML = " (" + chatLog.display + ")" + "<span class='beforeMessage'>: </span>"
-        let newColor = tinycolor(ca.process(chatLog.color))
+        displayNameSpan.innerHTML = " (" + token.display + ")" + "<span class='beforeMessage'>: </span>"
+        let newColor = tinycolor(ca.process(token.color))
         displayNameSpan.style.color = ca.process(newColor.darken(25).toString())
         displayNameSpan.style.fontWeight = "normal"
         usernameSpan.appendChild(displayNameSpan)
-        chatLog.color = ca.process(chatLog.color)
-        usernameSpan.style.color = chatLog.color;
+        token.color = ca.process(token.color)
+        usernameSpan.style.color = token.color;
         usernameSpan.style.fontWeight = "bold";
     }
     chatLine.appendChild(usernameSpan)
 }
 
-function createMessageSpan(chatLog) {
+function createMessageSpan(token) {
     const messageSpan = document.createElement("span");
     messageSpan.className = "messages";
-    messageSpan.className = chatLog.id
-    messageSpan.id = chatLog['message-id'];
+    messageSpan.className = token.id
+    messageSpan.id = token['message-id'];
     messageSpan.style.color = "#fff";
     messageSpan.style.fontWeight = "normal";
     const messagesArray = [];
-    postTwitchEmotes(chatLog, messagesArray)
+    postTwitchEmotes(token, messagesArray)
     messageSpan.innerHTML = messagesArray.join('')
     return messageSpan
 }
 
-function postTwitchEmotes(chatLog, messagesArray) {
-    const messages = chatLog.message
+function postTwitchEmotes(token, messagesArray) {
+    const messages = token.message
     for (const i in messages) {
         if (messages[i].type === "emote") {
             messagesArray.push("<img class='emotes' src=" + messages[i].url + ">  </img>")

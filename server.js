@@ -53,37 +53,38 @@ wss.on('connection', (ws) => {
     client.on("clearchat", (channel) => {
         console.log(channel)
     })
+    
     client.on("ban", (channel, username, reason, userstate) => {
         console.log(userstate)
-        let token = [{
+        let token = {
             event: "ban",
             duration: userstate['ban-duration'],
             user: userstate['target-user-id'],
             room: userstate['room-id']
-        }]
+        }
         console.log(token)
         ws.send(JSON.stringify(token))
     });
 
     client.on("timeout", (channel, username, reason, duration, userstate) => {
         console.log(userstate)
-        let token = [{
+        let token = {
             event: "timeout",
             duration: userstate['ban-duration'],
             user: userstate['target-user-id'],
             room: userstate['room-id']
-        }]
+        }
         console.log(token)
         ws.send(JSON.stringify(token))
     });
     // Messages need unique ids before this will work properly
     client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
         console.log(userstate)
-        let token = [{
+        let token = {
             event: "delete",
             'message-id': userstate['target-msg-id'],
             user: userstate.login,
-        }]
+        }
         console.log(token)
         ws.send(JSON.stringify(token))
     });
@@ -123,55 +124,47 @@ wss.on('connection', (ws) => {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
         }
 
-        console.log(context)
-
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
         if (context.badges === null) {
-            ffzGlobalEmotes.then((ffzEmotes) => {
+            (async () => {
+                let ffzEmotes = await getFFZGlobalEmotes()
                 emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                let ffzRoomEmotes = getFFZRoomEmotes(channel)
-                ffzRoomEmotes.then((roomEmotes) => {
-                    emoteToken = createFFZEmoteToken(roomEmotes, message, chatInfo)
-                    bttvGlobalEmotes.then((bttvEmotes) => {
-                        emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                        let bttvRoomEmotes = getBTTVRoomEmotes(context)
-                        bttvRoomEmotes.then((roomEmotes) => {
-                            emoteToken = createBTTVEmoteToken(roomEmotes, message, chatInfo)
-                            sendMessageToClient(context, chatInfo, message, emoteToken, ws)
-                        })
-                    })
-                })
-            })
+                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                let bttvEmotes = await getBTTVGlobalEmotes()
+                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                let bttvRoomEmotes = await getBTTVRoomEmotes(context)
+                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+            })();
         } else {
-            getGlobalTwitchBadges.then((globalBadges) => {
-                let getChannelBadges = getTwitchChannelBadges(context)
-                getChannelBadges.then((channelBadges) => {
-                    sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
-                    ffzGlobalEmotes.then((ffzEmotes) => {
-                        emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                        let ffzRoomEmotes = getFFZRoomEmotes(channel)
-                        ffzRoomEmotes.then((roomEmotes) => {
-                            emoteToken = createFFZEmoteToken(roomEmotes, message, chatInfo)
-                            bttvGlobalEmotes.then((bttvEmotes) => {
-                                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                                let bttvRoomEmotes = getBTTVRoomEmotes(context)
-                                bttvRoomEmotes.then((roomEmotes) => {
-                                    emoteToken = createBTTVEmoteToken(roomEmotes, message, chatInfo)
-                                    sendMessageToClient(context, chatInfo, message, emoteToken, ws)
-                                })
-                            })
-                        })
-                    })
-                })
-            })
+            (async () => {
+                let globalBadges = await getTwitchBadges()
+                let channelBadges = await getTwitchChannelBadges(context)
+                sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
+
+                let ffzEmotes = await getFFZGlobalEmotes()
+                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                let bttvEmotes = await getBTTVGlobalEmotes()
+                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                let bttvRoomEmotes = await getBTTVRoomEmotes(context)
+                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+            })();
         }
     })
 
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman']
+        channelsSent = ['snowman', 'firedragon']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -235,7 +228,7 @@ function getTwitchEmotes(context, chatInfo) {
     return sortedByIndex
 }
 
-function callAPI(url, context) {
+function callAPI(url) {
     return fetch(url, {
         method: 'GET'
     })
@@ -282,7 +275,7 @@ async function sortTwitchBadges(context, chatInfo, globalAPI, channelAPI) {
         else if (badgeToken[i].global === false) {
             if (badgeToken[i].type === "bits") {
                 let lowestBitValue = Object.getOwnPropertyNames(channelAPI.badge_sets.bits.versions);
-                if (badgeToken[i].id < lowestBitValue) {
+                if (badgeToken[i].id <= lowestBitValue) {
                     badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
                     chatInfo.badges.push(badgeToken[i])
                 } else {
