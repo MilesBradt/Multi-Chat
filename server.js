@@ -55,10 +55,37 @@ wss.on('connection', (ws) => {
     })
     client.on("ban", (channel, username, reason, userstate) => {
         console.log(userstate)
+        let token = [{
+            event: "ban",
+            duration: userstate['ban-duration'],
+            user: userstate['target-user-id'],
+            room: userstate['room-id']
+        }]
+        console.log(token)
+        ws.send(JSON.stringify(token))
     });
 
     client.on("timeout", (channel, username, reason, duration, userstate) => {
         console.log(userstate)
+        let token = [{
+            event: "timeout",
+            duration: userstate['ban-duration'],
+            user: userstate['target-user-id'],
+            room: userstate['room-id']
+        }]
+        console.log(token)
+        ws.send(JSON.stringify(token))
+    });
+    // Messages need unique ids before this will work properly
+    client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
+        console.log(userstate)
+        let token = [{
+            event: "delete",
+            'message-id': userstate['target-msg-id'],
+            user: userstate.login,
+        }]
+        console.log(token)
+        ws.send(JSON.stringify(token))
     });
 
     client.on("subscription", (channel, username, method, message, userstate) => {
@@ -78,12 +105,14 @@ wss.on('connection', (ws) => {
         const display = context.username
 
         const chatInfo = {
+            event: "message",
             channel: channel,
             username: username,
             display: display,
             message: [],
             color: context.color,
             id: context['user-id'],
+            'message-id': context.id,
             emotes: [],
             badges: [],
             ffz: false,
@@ -93,6 +122,8 @@ wss.on('connection', (ws) => {
         if (context.color === null) {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
         }
+
+        console.log(context)
 
         let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
@@ -140,7 +171,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'jcog', 'PangaeaPanga', 'zfg1']
+        channelsSent = ['snowman']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })

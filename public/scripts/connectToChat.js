@@ -3,31 +3,59 @@ function connectToChat(channel) {
     // const socket = new WebSocket('ws://localhost:8080');
 
     var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws");
+    let hovering = false;
 
     // Connection opened
     socket.addEventListener('open', function (event) {
         console.log('Connected to WS Server')
         socket.send(channel)
         ca = new Color.Adjuster;
+        notOverChat()
     });
 
     // Listen for messages
     socket.addEventListener('message', function (event) {
-        postToDOM(event)
+        let test = JSON.parse(event.data)
+
+        if(test.event === "message") {
+            postToDOM(event)
+        }
+        else if (test[0].event === "timeout" || test[0].event === "ban") {
+            handleTimeout(event)
+        } 
+        else if (test[0].event === "delete") {
+            console.log("it got here")
+            handleDeletedMessage(event)
+        }
     });
 
 }
 
-function scrollToBottom(chat) {
-    chat.scrollTop = chat.scrollHeight;
+function hoveringOverChat(bool) {
+    hovering = bool
+}
+
+function handleTimeout(event) {
+    let token = JSON.parse(event.data)
+    let thisToken = document.getElementsByClassName(token[0].user)
+    for (var i = 0; i < thisToken.length; ++i) {
+        console.log(i)
+        thisToken[i].textContent = "<message deleted>"
+        thisToken[i].style.color = '#979fab'
+    }
+}
+
+function handleDeletedMessage(event) {
+    let token = JSON.parse(event.data)
+    let message = document.getElementById(token[0]['message-id'])
+    message.textContent = "<message deleted>"
+    message.style.color = '#979fab'
 }
 
 function postToDOM(event) {
     const chatLog = JSON.parse(event.data);
     const chat = document.getElementById('chat');
     console.log(chatLog)
-
-    let shouldScroll = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
 
     createChannelLine(chatLog)
     let chatLine = createChatLine()
@@ -37,8 +65,12 @@ function postToDOM(event) {
 
     chatLine.appendChild(messageSpan)
 
-    if (!shouldScroll) {
-        scrollToBottom(chat);
+    if (hovering) {
+        console.log("on chat")
+    } else {
+        console.log("out of chat")
+        let xH = chat.scrollHeight
+        chat.scrollTo(0, xH)
     }
 }
 
@@ -71,7 +103,6 @@ function createBadges(chatLog, chatLine) {
 
 function createUserNameSpan(chatLog, chatLine, defaultColors) {
     const usernameSpan = document.createElement("span");
-    usernameSpan.id = chatLog.id;
     if (chatLog.display.toLowerCase() === chatLog.username.toLowerCase()) {
         usernameSpan.innerHTML = chatLog.username + "<span class='beforeMessage'>: </span>";
         chatLog.color = ca.process(chatLog.color)
@@ -89,15 +120,14 @@ function createUserNameSpan(chatLog, chatLine, defaultColors) {
         usernameSpan.style.color = chatLog.color;
         usernameSpan.style.fontWeight = "bold";
     }
-
-
     chatLine.appendChild(usernameSpan)
 }
 
 function createMessageSpan(chatLog) {
     const messageSpan = document.createElement("span");
     messageSpan.className = "messages";
-    messageSpan.id = chatLog.id;
+    messageSpan.className = chatLog.id
+    messageSpan.id = chatLog['message-id'];
     messageSpan.style.color = "#fff";
     messageSpan.style.fontWeight = "normal";
     const messagesArray = [];
