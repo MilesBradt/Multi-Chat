@@ -16,13 +16,16 @@ function connectToChat(channel) {
     // Listen for messages
     socket.addEventListener('message', function (event) {
         let token = JSON.parse(event.data)
-
-        if(token.event === "message") {
+        if (token.event === "message") {
+            createChannelLine(token)
             postToDOM(token)
+        } else if (token.event === "resub" || token.event === 'sub') {
+            createChannelLine(token)
+            postSubInfoToDom(token)
         }
         else if (token.event === "timeout" || token.event === "ban") {
             handleTimeout(token)
-        } 
+        }
         else if (token.event === "delete") {
             handleDeletedMessage(token)
         }
@@ -37,28 +40,24 @@ function hoveringOverChat(bool) {
 function handleTimeout(token) {
     let thisToken = document.getElementsByClassName(token.user)
     for (var i = 0; i < thisToken.length; ++i) {
-        console.log(i)
         thisToken[i].textContent = "<message deleted>"
         thisToken[i].style.color = '#979fab'
     }
 }
 
 function handleDeletedMessage(token) {
-    let message = document.getElementById(token[0]['message-id'])
+    let message = document.getElementById(token['message-id'])
     message.textContent = "<message deleted>"
     message.style.color = '#979fab'
 }
 
-function postToDOM(token) {
+function postToDOM(token, subDiv) {
     const chat = document.getElementById('chat');
-    console.log(token)
 
-    createChannelLine(token)
-    let chatLine = createChatLine()
+    let chatLine = createChatLine(token, subDiv)
     createBadges(token, chatLine)
     createUserNameSpan(token, chatLine)
     let messageSpan = createMessageSpan(token)
-
     chatLine.appendChild(messageSpan)
 
     if (hovering) {
@@ -70,12 +69,52 @@ function postToDOM(token) {
     }
 }
 
-function createChatLine() {
+function postSubInfoToDom(token) {
+    const subLine = document.createElement("div")
+    const subDiv = document.createElement("div")
+    subDiv.className = 'sub-div'
+    subLine.appendChild(subDiv)
+    const subSpan = document.createElement("span")
+    subSpan.className = "sub-span";
+    subDiv.appendChild(subSpan)
+    subLine.className = token.event
+    subLine.style.borderLeft = '0.3em solid ' + ca.process(token.color)
+    if(token.prime) {
+        subSpan.innerHTML = "<img class='sub-badges' src='../images/prime.png'></img> " + "<span class='sub-username'>" + token.display + "</span>" + " " + "<span class='sub-message'>" + token.system + "</span>"
+        document.getElementById("chat").appendChild(subLine)
+    } else {
+        subSpan.innerHTML = "<img class='sub-badges' src='../images/sub.png'></img> " + "<span class='sub-username'>" + token.display + "</span>" + " " + "<span class='sub-message'>" + token.system + "</span>"
+        document.getElementById("chat").appendChild(subLine)
+    }
+    
+    if (token.message[0].text !== null) {
+        postToDOM(token, subDiv)
+    }
+
+    if (hovering) {
+        console.log("on chat")
+    } else {
+        console.log("out of chat")
+        let xH = chat.scrollHeight
+        chat.scrollTo(0, xH)
+    }
+
+}
+
+function createChatLine(token, subDiv) {
     const chatLine = document.createElement("div")
     chatLine.id = "chatLine"
     chatLine.className = "chatLines"
-    document.getElementById("chat").appendChild(chatLine);
-    return chatLine
+    
+    if (token.evet === "sub" || token.event === "resub") {
+        subDiv.appendChild(chatLine)
+        chatLine.style.paddingBottom = "0.3em";
+        return chatLine
+    } else {
+        chatLine.style.paddingBottom = "1em";
+        document.getElementById("chat").appendChild(chatLine);
+        return chatLine
+    }
 }
 
 function createChannelLine(token) {

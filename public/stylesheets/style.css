@@ -43,7 +43,7 @@ div {
     height: 90%
 }
 
-.badges {
+.badges, .sub-badges {
     padding-right: 0.3em;
     position: relative;
     vertical-align: middle;
@@ -61,16 +61,39 @@ div {
 }
 
 .channelLines {
-    color: #707070;
+    color:  #b3b3b3;
     border-left: 0.3em solid #9147ff;
     margin-left: 0.5em;
     padding-left: 0.3em;
 }
 
+.sub, .resub {
+    margin-left: -0.5em;
+    padding-left: -0.3em;
+    margin-bottom: 1em;
+}
+
+.sub-div {
+    margin-left: 0.5em;
+    padding-left: 0.3em;
+}
+
+.sub-username {
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.sub-message {
+    color: #b3b3b3;
+}
+
+.sub-span {
+    vertical-align: middle;
+}
+
 .chatLines {
     width: 90%;
     vertical-align: text-top;
-    padding-bottom: 1em;
     margin-right: 1em;
     margin-left: 0.5em;
 }

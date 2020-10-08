@@ -25,10 +25,6 @@ console.log("HTML hosted at http://localhost:8080");
 const wss = new WebSocket.Server({ server: server });
 
 wss.on('connection', (ws) => {
-    let getGlobalTwitchBadges = getTwitchBadges();
-    let ffzGlobalEmotes = getFFZGlobalEmotes();
-    let bttvGlobalEmotes = getBTTVGlobalEmotes();
-
     let channels = [];
     let usersWithoutColor = [];
     let colorlessArray = [];
@@ -53,48 +49,192 @@ wss.on('connection', (ws) => {
     client.on("clearchat", (channel) => {
         console.log(channel)
     })
-    
+
     client.on("ban", (channel, username, reason, userstate) => {
-        console.log(userstate)
+
         let token = {
             event: "ban",
             duration: userstate['ban-duration'],
             user: userstate['target-user-id'],
             room: userstate['room-id']
         }
-        console.log(token)
+
         ws.send(JSON.stringify(token))
     });
 
     client.on("timeout", (channel, username, reason, duration, userstate) => {
-        console.log(userstate)
+
         let token = {
             event: "timeout",
             duration: userstate['ban-duration'],
             user: userstate['target-user-id'],
             room: userstate['room-id']
         }
-        console.log(token)
+
         ws.send(JSON.stringify(token))
     });
     // Messages need unique ids before this will work properly
     client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
-        console.log(userstate)
+
         let token = {
             event: "delete",
             'message-id': userstate['target-msg-id'],
             user: userstate.login,
         }
-        console.log(token)
+
         ws.send(JSON.stringify(token))
     });
 
     client.on("subscription", (channel, username, method, message, userstate) => {
-        console.log(userstate)
+        let systemMessage = userstate['system-msg']
+        let splitSystem = systemMessage.split(' ')
+        splitSystem.shift()
+        let subMessage = splitSystem.join(' ')
+        console.log(subMessage)
+
+        const display = userstate.login
+        let displayName = userstate['display-name']
+
+        const chatInfo = {
+            event: "sub",
+            prime: method.prime,
+            channel: channel.slice(1),
+            username: displayName,
+            display: display,
+            message: [],
+            system: subMessage,
+            color: userstate.color,
+            id: userstate['user-id'],
+            'message-id': userstate.id,
+            emotes: [],
+            badges: [],
+            ffz: false,
+            bttv: false
+        }
+
+        if (userstate.color === null) {
+            setColorForColorlessUsers(userstate, chatInfo, usersWithoutColor, colorlessArray)
+        }
+
+        let emoteToken = getTwitchEmotes(userstate, chatInfo, message);
+
+        if (userstate.badges === null) {
+            (async () => {
+                if (message !== null) {
+                    let ffzEmotes = await getFFZGlobalEmotes()
+                    emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                    let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                    emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                    let bttvEmotes = await getBTTVGlobalEmotes()
+                    emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                    let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+                    emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+                } else {
+                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+                }
+            })();
+        } else {
+            (async () => {
+                if (message !== null) {
+                    let globalBadges = await getTwitchBadges()
+                    let channelBadges = await getTwitchChannelBadges(userstate)
+                    sortTwitchBadges(userstate, chatInfo, globalBadges, channelBadges)
+
+                    let ffzEmotes = await getFFZGlobalEmotes()
+                    emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                    let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                    emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                    let bttvEmotes = await getBTTVGlobalEmotes()
+                    emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                    let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+                    emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+                } else {
+                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+                }
+            })();
+        }
     });
 
     client.on("resub", (channel, username, months, message, userstate, methods) => {
-        console.log(userstate)
+        let systemMessage = userstate['system-msg']
+        let splitSystem = systemMessage.split(' ')
+        splitSystem.shift()
+        let subMessage = splitSystem.join(' ')
+        console.log(subMessage)
+
+        const display = userstate.login
+        let displayName = userstate['display-name']
+
+        const chatInfo = {
+            event: "resub",
+            prime: methods.prime,
+            channel: channel.slice(1),
+            username: displayName,
+            display: display,
+            message: [],
+            system: subMessage,
+            color: userstate.color,
+            id: userstate['user-id'],
+            'message-id': userstate.id,
+            emotes: [],
+            badges: [],
+            ffz: false,
+            bttv: false
+        }
+
+        if (userstate.color === null) {
+            setColorForColorlessUsers(userstate, chatInfo, usersWithoutColor, colorlessArray)
+        }
+
+        let emoteToken = getTwitchEmotes(userstate, chatInfo, message);
+
+        if (userstate.badges === null) {
+            (async () => {
+                if (message !== null) {
+                    let ffzEmotes = await getFFZGlobalEmotes()
+                    emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                    let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                    emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                    let bttvEmotes = await getBTTVGlobalEmotes()
+                    emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                    let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+                    emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+                } else {
+                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+                }
+            })();
+        } else {
+            (async () => {
+                if (message !== null) {
+                    let globalBadges = await getTwitchBadges()
+                    let channelBadges = await getTwitchChannelBadges(userstate)
+                    sortTwitchBadges(userstate, chatInfo, globalBadges, channelBadges)
+
+                    let ffzEmotes = await getFFZGlobalEmotes()
+                    emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                    let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                    emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                    let bttvEmotes = await getBTTVGlobalEmotes()
+                    emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                    let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+                    emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+                } else {
+                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+                }
+            })();
+        }
         let cumulativeMonths = ~~userstate["msg-param-cumulative-months"];
     });
 
