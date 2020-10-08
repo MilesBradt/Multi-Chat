@@ -46,18 +46,25 @@ div {
 .badges, .sub-badges {
     padding-right: 0.3em;
     position: relative;
-    vertical-align: middle;
+    vertical-align: inherit;
 }
 
 .messages {
     margin: 0;
     padding: 0;
-    vertical-align: baseline;
+    vertical-align: middle;
 }
 
 .beforeMessage {
     color: #fff;
     font-weight: normal;
+    position: relative;
+    vertical-align: baseline;
+}
+
+.user-name {
+    position: relative;
+    vertical-align: baseline;
 }
 
 .channelLines {

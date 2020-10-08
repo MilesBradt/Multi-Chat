@@ -138,6 +138,7 @@ function createBadges(token, chatLine) {
 
 function createUserNameSpan(token, chatLine) {
     const usernameSpan = document.createElement("span");
+    usernameSpan.className = "user-name"
     if (token.display.toLowerCase() === token.username.toLowerCase()) {
         usernameSpan.innerHTML = token.username + "<span class='beforeMessage'>: </span>";
         token.color = ca.process(token.color)
