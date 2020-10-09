@@ -85,12 +85,32 @@ wss.on('connection', (ws) => {
         ws.send(JSON.stringify(token))
     });
 
+    client.on("notice", (channel, msgid, message) => {
+       console.log(msgid)
+    });
+
+    client.on("subgift", (channel, username, streakMonths, recipient, methods, userstate) => {
+        console.log(username)
+        console.log(streakMonths)
+        console.log(recipient)
+        console.log(methods)
+        console.log(userstate)
+        let senderCount = ~~userstate["msg-param-sender-count"];
+    });
+
+    client.on("submysterygift", (channel, username, numbOfSubs, methods, userstate) => {
+        console.log(username)
+        console.log(numbOfSubs)
+        console.log(methods)
+        console.log(userstate)
+        let senderCount = ~~userstate["msg-param-sender-count"];
+    });
+
     client.on("subscription", (channel, username, method, message, userstate) => {
         let systemMessage = userstate['system-msg']
         let splitSystem = systemMessage.split(' ')
         splitSystem.shift()
         let subMessage = splitSystem.join(' ')
-        console.log(subMessage)
 
         const display = userstate.login
         let displayName = userstate['display-name']
@@ -166,8 +186,7 @@ wss.on('connection', (ws) => {
         let splitSystem = systemMessage.split(' ')
         splitSystem.shift()
         let subMessage = splitSystem.join(' ')
-        console.log(subMessage)
-
+        
         const display = userstate.login
         let displayName = userstate['display-name']
 
@@ -238,12 +257,20 @@ wss.on('connection', (ws) => {
         let cumulativeMonths = ~~userstate["msg-param-cumulative-months"];
     });
 
+    client.on("cheer", (channel, userstate, message) => {
+        console.log(channel)
+        console.log(userstate)
+        console.log(message)
+    });
+
     client.on('message', (target, context, msg, self) => {
         const message = msg.trim();
         const channel = target.slice(1)
         // I know these are backwards, I'll fix it later
         const username = context['display-name']
         const display = context.username
+
+        console.log(context)
 
         const chatInfo = {
             event: "message",
@@ -254,6 +281,7 @@ wss.on('connection', (ws) => {
             color: context.color,
             id: context['user-id'],
             'message-id': context.id,
+            special: context['msg-id'],
             emotes: [],
             badges: [],
             ffz: false,
@@ -304,7 +332,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'firedragon', 'summerheroes']
+        channelsSent = ['snowman', 'emongg']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })

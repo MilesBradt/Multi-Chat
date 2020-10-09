@@ -44,9 +44,15 @@ div {
 }
 
 .badges, .sub-badges {
+    padding-left: 0.3em;
     padding-right: 0.3em;
     position: relative;
     vertical-align: inherit;
+}
+
+.points-icon {
+    position: relative;
+    vertical-align: text-top;
 }
 
 .messages {
@@ -71,17 +77,18 @@ div {
     color:  #b3b3b3;
     border-left: 0.3em solid #9147ff;
     margin-left: 0.5em;
+    margin-bottom: 0.3em;
+    margin-top: 0.3em;
     padding-left: 0.3em;
 }
 
-.sub, .resub {
-    margin-left: -0.5em;
-    padding-left: -0.3em;
-    margin-bottom: 1em;
+.sub, .resub, .highlighted-message {
+    margin-left: -0.75em;
+    padding-left: 0.5em;
+    padding-bottom: 0.3em;
 }
 
-.sub-div {
-    margin-left: 0.5em;
+.sub-div, .highlight-event {
     padding-left: 0.3em;
 }
 
@@ -90,8 +97,13 @@ div {
     color: #ffffff;
 }
 
-.sub-message {
+.sub-message, .redeemed {
     color: #b3b3b3;
+}
+
+.highlight-my-message {
+    color: #b3b3b3;
+    font-weight: bold;
 }
 
 .sub-span {
@@ -102,7 +114,6 @@ div {
     width: 90%;
     vertical-align: text-top;
     margin-right: 1em;
-    margin-left: 0.5em;
 }
 
 #chat-container {
