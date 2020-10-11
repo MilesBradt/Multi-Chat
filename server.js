@@ -263,7 +263,7 @@ wss.on('connection', (ws) => {
 
     client.on("cheer", (channel, userstate, message) => {
         
-        const channelClean = target.slice(1)
+        const channelClean = channel.slice(1)
         // I know these are backwards, I'll fix it later
         const username = userstate['display-name']
         const display = userstate.username
@@ -360,7 +360,6 @@ wss.on('connection', (ws) => {
             bttv: false
         }
 
-
         if (context.color === null) {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
         }
@@ -383,10 +382,6 @@ wss.on('connection', (ws) => {
             })();
         } else {
             (async () => {
-                let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + context['room-id']
-                let cheers = await callCheerAPI(url)
-                emoteToken = getCheers(cheers, message, chatInfo)
-
                 let globalBadges = await getTwitchBadges()
                 let channelBadges = await getTwitchChannelBadges(context)
                 sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
@@ -411,7 +406,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman']
+        channelsSent = ['snowman', 'pokimane', 'shroud', 'summerheroes']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
