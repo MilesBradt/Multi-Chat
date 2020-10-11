@@ -262,26 +262,78 @@ wss.on('connection', (ws) => {
     });
 
     client.on("cheer", (channel, userstate, message) => {
-        (async () => {
-            console.log(channel)
-            console.log(userstate)
-            console.log(message)
+        
+        const channelClean = target.slice(1)
+        // I know these are backwards, I'll fix it later
+        const username = userstate['display-name']
+        const display = userstate.username
 
-            let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + userstate['room-id']
-            let cheers = await callCheerAPI(url)
+        const chatInfo = {
+            event: "message",
+            channel: channelClean,
+            username: username,
+            display: display,
+            message: [],
+            color: userstate.color,
+            id: userstate['user-id'],
+            'message-id': userstate.id,
+            special: userstate['msg-id'],
+            emotes: [],
+            badges: [],
+            cheer: false,
+            ffz: false,
+            bttv: false
+        }
 
-            for (i in cheers.actions) {
-                let cheerName = (cheers.actions[i].prefix).toString()
-                if (message.toLowerCase().includes(cheerName.toLowerCase())) {
-                    chatInfo.cheers.push({
-                        'name': cheers.actions[i].prefix,
-                        'types': cheers.actions[i].tiers
-                    })
-                }
-            }
 
+        if (userstate.color === null) {
+            setColorForColorlessUsers(userstate, chatInfo, usersWithoutColor, colorlessArray)
+        }
 
-        })();
+        let emoteToken = getTwitchEmotes(userstate, chatInfo, message);
+
+        if (userstate.badges === null) {
+            (async () => {
+                let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + userstate['room-id']
+                let cheers = await callCheerAPI(url)
+                emoteToken = getCheers(cheers, message, chatInfo)
+                let ffzEmotes = await getFFZGlobalEmotes()
+                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                let bttvEmotes = await getBTTVGlobalEmotes()
+                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+            })();
+        } else {
+            (async () => {
+                let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + userstate['room-id']
+                let cheers = await callCheerAPI(url)
+                emoteToken = getCheers(cheers, message, chatInfo)
+
+                let globalBadges = await getTwitchBadges()
+                let channelBadges = await getTwitchChannelBadges(userstate)
+                sortTwitchBadges(userstate, chatInfo, globalBadges, channelBadges)
+
+                let ffzEmotes = await getFFZGlobalEmotes()
+                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                let bttvEmotes = await getBTTVGlobalEmotes()
+                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                console.log(emoteToken)
+
+                sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+            })();
+        }
     });
 
     client.on('message', (target, context, msg, self) => {
@@ -547,17 +599,22 @@ function getCheers(cheers, message, chatInfo) {
     let cheerToken = []
 
     for (i in cheers.actions) {
-        let index = message.lastIndexOf(cheers.actions[i].prefix)
+        let lowerMessage = message.toLowerCase()
+        let lowerPrefix = cheers.actions[i].prefix.toLowerCase()
+        console.log(lowerMessage)
+        console.log(lowerPrefix)
+        let index = lowerMessage.lastIndexOf(lowerPrefix)
+        console.log("index: "+ index)
         while (index != -1) {
-            let name = cheers.actions[i].prefix
-            endingIndex = index + cheers.actions[i].prefix.length
-            let lastCharacter = message[index - 1]
-            let nextCharacter = message[endingIndex]
+            let name = lowerPrefix
+            endingIndex = index + lowerPrefix.length
+            let lastCharacter = lowerMessage[index - 1]
+            let nextCharacter = lowerMessage[endingIndex]
             console.log(nextCharacter)
             if (isStartingCheer(lastCharacter) && isEndingCheer(nextCharacter)) {
 
                 const regex = new RegExp(`(?<=${name})\\d+`, 'g')
-                let numbers = message.match(regex)
+                let numbers = lowerMessage.match(regex)
 
                 cheerToken.push({
                     "prefix": name,
@@ -567,8 +624,10 @@ function getCheers(cheers, message, chatInfo) {
                     'endIndex': endingIndex - 1
                 })
 
+            } else {
+                console.log("not a cheer")
             }
-            index = (index > 0 ? message.lastIndexOf(cheers.actions[i].prefix, index - 1) : -1)
+            index = (index > 0 ? lowerMessage.lastIndexOf(lowerPrefix, index - 1) : -1)
         }
     }
 
