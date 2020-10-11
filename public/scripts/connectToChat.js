@@ -204,6 +204,7 @@ function createMessageSpan(token) {
 
 function postTwitchEmotes(token, messagesArray) {
     const messages = token.message
+    console.log(messages)
     for (const i in messages) {
         if (messages[i].type === "emote") {
             messagesArray.push("<img class='emotes' src=" + messages[i].url + ">  </img>")
