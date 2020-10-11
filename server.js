@@ -1,6 +1,9 @@
 const express = require('express');
 const tmi = require('tmi.js');
 const app = express();
+const config = require('./config.js');
+const auth = config.Authorization;
+const clientID = config.CLIENT_ID;
 const fetch = require('node-fetch');
 const path = require('path');
 const http = require('http');
@@ -86,7 +89,7 @@ wss.on('connection', (ws) => {
     });
 
     client.on("notice", (channel, msgid, message) => {
-       console.log(msgid)
+        console.log(msgid)
     });
 
     client.on("subgift", (channel, username, streakMonths, recipient, methods, userstate) => {
@@ -186,7 +189,7 @@ wss.on('connection', (ws) => {
         let splitSystem = systemMessage.split(' ')
         splitSystem.shift()
         let subMessage = splitSystem.join(' ')
-        
+
         const display = userstate.login
         let displayName = userstate['display-name']
 
@@ -203,6 +206,7 @@ wss.on('connection', (ws) => {
             'message-id': userstate.id,
             emotes: [],
             badges: [],
+            cheers: [],
             ffz: false,
             bttv: false
         }
@@ -258,9 +262,26 @@ wss.on('connection', (ws) => {
     });
 
     client.on("cheer", (channel, userstate, message) => {
-        console.log(channel)
-        console.log(userstate)
-        console.log(message)
+        (async () => {
+            console.log(channel)
+            console.log(userstate)
+            console.log(message)
+
+            let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + userstate['room-id']
+            let cheers = await callCheerAPI(url)
+
+            for (i in cheers.actions) {
+                let cheerName = (cheers.actions[i].prefix).toString()
+                if (message.toLowerCase().includes(cheerName.toLowerCase())) {
+                    chatInfo.cheers.push({
+                        'name': cheers.actions[i].prefix,
+                        'types': cheers.actions[i].tiers
+                    })
+                }
+            }
+
+            
+        })();
     });
 
     client.on('message', (target, context, msg, self) => {
@@ -269,8 +290,6 @@ wss.on('connection', (ws) => {
         // I know these are backwards, I'll fix it later
         const username = context['display-name']
         const display = context.username
-
-        console.log(context)
 
         const chatInfo = {
             event: "message",
@@ -284,9 +303,11 @@ wss.on('connection', (ws) => {
             special: context['msg-id'],
             emotes: [],
             badges: [],
+            cheer: false,
             ffz: false,
             bttv: false
         }
+
 
         if (context.color === null) {
             setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
@@ -310,6 +331,10 @@ wss.on('connection', (ws) => {
             })();
         } else {
             (async () => {
+                let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + context['room-id']
+                let cheers = await callCheerAPI(url)
+                emoteToken = getCheers(cheers, message, chatInfo, 200) 
+            
                 let globalBadges = await getTwitchBadges()
                 let channelBadges = await getTwitchChannelBadges(context)
                 sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
@@ -324,6 +349,8 @@ wss.on('connection', (ws) => {
                 let bttvRoomEmotes = await getBTTVRoomEmotes(context)
                 emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
 
+                console.log(emoteToken)
+
                 sendMessageToClient(context, chatInfo, message, emoteToken, ws)
             })();
         }
@@ -332,7 +359,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'emongg']
+        channelsSent = ['snowman']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -516,6 +543,38 @@ async function getBTTVRoomEmotes(context) {
     return bttvEmotes
 }
 
+function getCheers(cheers, message, chatInfo, total) {
+    let cheerToken = []
+    
+    for (i in cheers.actions) {
+        let index = message.lastIndexOf(cheers.actions[i].prefix)
+        while (index != -1) {
+            let name = cheers.actions[i].prefix
+            endingIndex = index + cheers.actions[i].prefix.length
+            let lastCharacter = message[index - 1]
+            let nextCharacter = message[endingIndex]
+            console.log(nextCharacter)
+            if (isStartingCheer(lastCharacter) && isEndingCheer(nextCharacter)) {
+                
+                const regex = new RegExp(`(?<=${name})\\d+` , 'g')
+                let numbers = message.match(regex)
+
+                cheerToken.push({
+                    "prefix": name,
+                    "tiers": cheers.actions[i].tiers,
+                    "amount": numbers,
+                    'startIndex': index
+                })
+
+            }
+            index = (index > 0 ? message.lastIndexOf(cheers.actions[i].prefix, index - 1) : -1)
+        }
+    }
+    
+    const sortedByIndex = cheerToken.sort(dynamicSort("startIndex"))
+    console.log(sortedByIndex)
+}
+
 function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
     let emotes = ffzEmotes.flat()
 
@@ -638,7 +697,7 @@ function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
 }
 
 function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
-    if (context.emotes === null && chatInfo.ffz !== true && chatInfo.bttv !== true) {
+    if (context.emotes === null && chatInfo.ffz !== true && chatInfo.bttv !== true && chatInfo.cheer !== true) {
         chatInfo.message.push({
             "type": "text",
             "text": message
@@ -653,6 +712,29 @@ function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
 
 function isEmoteEnding(character) {
     return (character === undefined || character === " " || character === "." || character === "," || character === "!") ? true : false
+}
+
+function isStartingCheer(character) {
+    return (character === undefined || character === " " || character === "!" || character === "1" || character === "5") ? true : false
+}
+
+function isEndingCheer(character) {
+   return (character === "1" || character === "5") ? true : false
+}
+
+function callCheerAPI(url) {
+    return fetch(url, {
+        method: 'GET',
+        headers: {
+            'Client-ID': clientID,
+            'Authorization': auth
+        },
+    })
+        .then(response => response.json())
+        .then(data => {
+            // console.log('Success:', data);
+            return data
+        })
 }
 
 // Thank you, Ege Özcan: https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
