@@ -16,7 +16,7 @@ function connectToChat(channel) {
     // Listen for messages
     socket.addEventListener('message', function (event) {
         let token = JSON.parse(event.data)
-
+        console.log(token)
         if (token.special === 'highlighted-message') {
             createChannelLine(token)
             postHighlightedMessageToDom(token)
@@ -207,8 +207,14 @@ function postTwitchEmotes(token, messagesArray) {
     console.log(messages)
     for (const i in messages) {
         if (messages[i].type === "emote") {
-            messagesArray.push("<img class='emotes' src=" + messages[i].url + ">  </img>")
+            console.log(messages[i])
+            if(messages[i].event === "cheer") {
+                messagesArray.push("<img class='cheer' src=" + messages[i].url + ">  </img>" + " " + "<span class='cheer' style='color: " + messages[i].color + "; font-weight: bold;'>" + messages[i].amount + "</span>")
+            } else {
+                messagesArray.push("<img class='emotes' src=" + messages[i].url + ">  </img>")
+            }
         }
+        
         if (messages[i].type === "text") {
             messagesArray.push(messages[i].text)
         }

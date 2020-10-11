@@ -16,7 +16,7 @@ div {
     display: block;
 }
 
-.emotes {
+.emotes, .cheer {
     margin: -.5rem 0;
     position: relative;
     vertical-align: middle;

@@ -280,7 +280,7 @@ wss.on('connection', (ws) => {
                 }
             }
 
-            
+
         })();
     });
 
@@ -333,8 +333,8 @@ wss.on('connection', (ws) => {
             (async () => {
                 let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + context['room-id']
                 let cheers = await callCheerAPI(url)
-                emoteToken = getCheers(cheers, message, chatInfo, 200) 
-            
+                emoteToken = getCheers(cheers, message, chatInfo)
+
                 let globalBadges = await getTwitchBadges()
                 let channelBadges = await getTwitchChannelBadges(context)
                 sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
@@ -543,9 +543,9 @@ async function getBTTVRoomEmotes(context) {
     return bttvEmotes
 }
 
-function getCheers(cheers, message, chatInfo, total) {
+function getCheers(cheers, message, chatInfo) {
     let cheerToken = []
-    
+
     for (i in cheers.actions) {
         let index = message.lastIndexOf(cheers.actions[i].prefix)
         while (index != -1) {
@@ -555,24 +555,63 @@ function getCheers(cheers, message, chatInfo, total) {
             let nextCharacter = message[endingIndex]
             console.log(nextCharacter)
             if (isStartingCheer(lastCharacter) && isEndingCheer(nextCharacter)) {
-                
-                const regex = new RegExp(`(?<=${name})\\d+` , 'g')
+
+                const regex = new RegExp(`(?<=${name})\\d+`, 'g')
                 let numbers = message.match(regex)
 
                 cheerToken.push({
                     "prefix": name,
                     "tiers": cheers.actions[i].tiers,
                     "amount": numbers,
-                    'startIndex': index
+                    'startIndex': index,
+                    'endIndex': endingIndex - 1
                 })
 
             }
             index = (index > 0 ? message.lastIndexOf(cheers.actions[i].prefix, index - 1) : -1)
         }
     }
-    
+
     const sortedByIndex = cheerToken.sort(dynamicSort("startIndex"))
     console.log(sortedByIndex)
+
+    for (i in sortedByIndex) {
+        console.log(sortedByIndex[i].amount[i])
+        test = parseInt(sortedByIndex[i].amount[i])
+        console.log(test)
+        let cheer = whichCheer(parseInt(sortedByIndex[i].amount[i]))
+        console.log("cheer: " + cheer)
+        sortedByIndex[i].tiers.forEach(tier => {
+
+            if (cheer === tier.min_bits) {
+                chatInfo.cheer = true
+                chatInfo.emotes.push({
+                    "emoteId": sortedByIndex[i].prefix,
+                    "startIndex": sortedByIndex[i].startIndex,
+                    "endIndex": sortedByIndex[i].endIndex + sortedByIndex[i].amount[i].length,
+                    "type": "cheer",
+                    "url": tier.images.dark.animated['1'],
+                    "amount": sortedByIndex[i].amount[i],
+                    "color": tier.color,
+                    "event": "cheer"
+                })
+            }
+        })
+    }
+}
+
+function whichCheer(amount) {
+    if (amount < 100) {
+        return 1
+    } else if (amount < 1000) {
+        return 100
+    } else if (amount < 5000) {
+        return 1000
+    } else if (amount < 10000) {
+        return 5000
+    } else {
+        return 10000
+    }
 }
 
 function createFFZEmoteToken(ffzEmotes, message, chatInfo) {
@@ -668,7 +707,10 @@ function createMessageTokenForEmotes(chatInfo, message, emoteToken) {
             "id": emoteToken[i].emoteId,
             "text": typeEmoteArray.join(''),
             "from": emoteToken[i].type,
-            "url": emoteToken[i].url
+            "url": emoteToken[i].url,
+            "amount": emoteToken[i].amount,
+            "color": emoteToken[i].color,
+            "event": emoteToken[i].event
         })
 
         let betweenTextArray = [];
@@ -715,11 +757,11 @@ function isEmoteEnding(character) {
 }
 
 function isStartingCheer(character) {
-    return (character === undefined || character === " " || character === "!" || character === "1" || character === "5") ? true : false
+    return (character === undefined || character === " " || character === "!") ? true : false
 }
 
 function isEndingCheer(character) {
-   return (character === "1" || character === "5") ? true : false
+    return (character === "1" || character === "2" || character === "3" || character === "4" || character === "5" || character === "6" || character === "7" || character === "8" || character === "9") ? true : false
 }
 
 function callCheerAPI(url) {
