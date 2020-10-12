@@ -1,7 +1,7 @@
 const express = require('express');
 const tmi = require('tmi.js');
 const app = express();
-const config = require('./config.js');
+const config = require('./modules/config.js');
 const auth = config.Authorization;
 const clientID = config.CLIENT_ID;
 const fetch = require('node-fetch');
@@ -9,11 +9,11 @@ const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const e = require('express');
-const { channel } = require('tmi.js/lib/utils');
+const {
+    channel
+} = require('tmi.js/lib/utils');
 const server = http.createServer(app);
 const defaultColors = ['#ff0000', '#0000ff', '#008000', '#b22222', '#ff7f50', '#ff7f50', '#ff4500', '#2e8b57', '#daa520', '#d2691e', '#5f9ea0', '#1e90ff', '#ff69b4', '#8a2be2', '#00ff7f']
-
-
 
 app.use(express.static('public'))
 
@@ -22,10 +22,23 @@ app.get('/', function (req, res) {
     res.sendFile(path.join(__dirname + '/index.html'));
 });
 
+let test = ""
+let channelTest = ['snowman', 'summerheroes']
+
+for (i in channelTest) {
+    test += "/" + channelTest[i]
+}
+
+app.get(test, function (req, res) {
+    res.sendFile(path.join(__dirname + '/index.html'));
+})
+
 server.listen(8080, () => console.log('Listening on port: 8080'));
 console.log("HTML hosted at http://localhost:8080");
 
-const wss = new WebSocket.Server({ server: server });
+const wss = new WebSocket.Server({
+    server: server
+});
 
 wss.on('connection', (ws) => {
     let channels = [];
@@ -118,70 +131,7 @@ wss.on('connection', (ws) => {
         const display = userstate.login
         let displayName = userstate['display-name']
 
-        const chatInfo = {
-            event: "sub",
-            prime: method.prime,
-            channel: channel.slice(1),
-            username: displayName,
-            display: display,
-            message: [],
-            system: subMessage,
-            color: userstate.color,
-            id: userstate['user-id'],
-            'message-id': userstate.id,
-            emotes: [],
-            badges: [],
-            ffz: false,
-            bttv: false
-        }
-
-        if (userstate.color === null) {
-            setColorForColorlessUsers(userstate, chatInfo, usersWithoutColor, colorlessArray)
-        }
-
-        let emoteToken = getTwitchEmotes(userstate, chatInfo, message);
-
-        if (userstate.badges === null) {
-            (async () => {
-                if (message !== null) {
-                    let ffzEmotes = await getFFZGlobalEmotes()
-                    emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                    let ffzRoomEmotes = await getFFZRoomEmotes(channel)
-                    emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
-
-                    let bttvEmotes = await getBTTVGlobalEmotes()
-                    emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                    let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
-                    emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
-
-                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-                } else {
-                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-                }
-            })();
-        } else {
-            (async () => {
-                if (message !== null) {
-                    let globalBadges = await getTwitchBadges()
-                    let channelBadges = await getTwitchChannelBadges(userstate)
-                    sortTwitchBadges(userstate, chatInfo, globalBadges, channelBadges)
-
-                    let ffzEmotes = await getFFZGlobalEmotes()
-                    emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                    let ffzRoomEmotes = await getFFZRoomEmotes(channel)
-                    emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
-
-                    let bttvEmotes = await getBTTVGlobalEmotes()
-                    emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                    let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
-                    emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
-
-                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-                } else {
-                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-                }
-            })();
-        }
+        sendSubEventToClient(subMessage, message, channel, displayName, display, userstate, ws, "sub", method, usersWithoutColor, colorlessArray)
     });
 
     client.on("resub", (channel, username, months, message, userstate, methods) => {
@@ -193,147 +143,17 @@ wss.on('connection', (ws) => {
         const display = userstate.login
         let displayName = userstate['display-name']
 
-        const chatInfo = {
-            event: "resub",
-            prime: methods.prime,
-            channel: channel.slice(1),
-            username: displayName,
-            display: display,
-            message: [],
-            system: subMessage,
-            color: userstate.color,
-            id: userstate['user-id'],
-            'message-id': userstate.id,
-            emotes: [],
-            badges: [],
-            cheers: [],
-            ffz: false,
-            bttv: false
-        }
-
-        if (userstate.color === null) {
-            setColorForColorlessUsers(userstate, chatInfo, usersWithoutColor, colorlessArray)
-        }
-
-        let emoteToken = getTwitchEmotes(userstate, chatInfo, message);
-
-        if (userstate.badges === null) {
-            (async () => {
-                if (message !== null) {
-                    let ffzEmotes = await getFFZGlobalEmotes()
-                    emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                    let ffzRoomEmotes = await getFFZRoomEmotes(channel)
-                    emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
-
-                    let bttvEmotes = await getBTTVGlobalEmotes()
-                    emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                    let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
-                    emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
-
-                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-                } else {
-                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-                }
-            })();
-        } else {
-            (async () => {
-                if (message !== null) {
-                    let globalBadges = await getTwitchBadges()
-                    let channelBadges = await getTwitchChannelBadges(userstate)
-                    sortTwitchBadges(userstate, chatInfo, globalBadges, channelBadges)
-
-                    let ffzEmotes = await getFFZGlobalEmotes()
-                    emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                    let ffzRoomEmotes = await getFFZRoomEmotes(channel)
-                    emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
-
-                    let bttvEmotes = await getBTTVGlobalEmotes()
-                    emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                    let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
-                    emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
-
-                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-                } else {
-                    sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-                }
-            })();
-        }
+        sendSubEventToClient(subMessage, message, channel, displayName, display, userstate, ws, "resub", methods, usersWithoutColor, colorlessArray)
         let cumulativeMonths = ~~userstate["msg-param-cumulative-months"];
     });
 
     client.on("cheer", (channel, userstate, message) => {
-        
-        const channelClean = channel.slice(1)
+        const cleanChannel = channel.slice(1)
         // I know these are backwards, I'll fix it later
         const username = userstate['display-name']
         const display = userstate.username
 
-        const chatInfo = {
-            event: "message",
-            channel: channelClean,
-            username: username,
-            display: display,
-            message: [],
-            color: userstate.color,
-            id: userstate['user-id'],
-            'message-id': userstate.id,
-            special: userstate['msg-id'],
-            emotes: [],
-            badges: [],
-            cheer: false,
-            ffz: false,
-            bttv: false
-        }
-
-
-        if (userstate.color === null) {
-            setColorForColorlessUsers(userstate, chatInfo, usersWithoutColor, colorlessArray)
-        }
-
-        let emoteToken = getTwitchEmotes(userstate, chatInfo, message);
-
-        if (userstate.badges === null) {
-            (async () => {
-                let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + userstate['room-id']
-                let cheers = await callCheerAPI(url)
-                emoteToken = getCheers(cheers, message, chatInfo)
-                let ffzEmotes = await getFFZGlobalEmotes()
-                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
-                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
-
-                let bttvEmotes = await getBTTVGlobalEmotes()
-                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
-                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
-
-                sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-            })();
-        } else {
-            (async () => {
-                let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + userstate['room-id']
-                let cheers = await callCheerAPI(url)
-                emoteToken = getCheers(cheers, message, chatInfo)
-
-                let globalBadges = await getTwitchBadges()
-                let channelBadges = await getTwitchChannelBadges(userstate)
-                sortTwitchBadges(userstate, chatInfo, globalBadges, channelBadges)
-
-                let ffzEmotes = await getFFZGlobalEmotes()
-                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
-                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
-
-                let bttvEmotes = await getBTTVGlobalEmotes()
-                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
-                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
-
-                console.log(emoteToken)
-
-                sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
-            })();
-        }
+        sendCheerEventToClient(message, cleanChannel, username, display, userstate, ws, usersWithoutColor, colorlessArray)
     });
 
     client.on('message', (target, context, msg, self) => {
@@ -343,70 +163,13 @@ wss.on('connection', (ws) => {
         const username = context['display-name']
         const display = context.username
 
-        const chatInfo = {
-            event: "message",
-            channel: channel,
-            username: username,
-            display: display,
-            message: [],
-            color: context.color,
-            id: context['user-id'],
-            'message-id': context.id,
-            special: context['msg-id'],
-            emotes: [],
-            badges: [],
-            cheer: false,
-            ffz: false,
-            bttv: false
-        }
-
-        if (context.color === null) {
-            setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
-        }
-
-        let emoteToken = getTwitchEmotes(context, chatInfo, message);
-
-        if (context.badges === null) {
-            (async () => {
-                let ffzEmotes = await getFFZGlobalEmotes()
-                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
-                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
-
-                let bttvEmotes = await getBTTVGlobalEmotes()
-                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                let bttvRoomEmotes = await getBTTVRoomEmotes(context)
-                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
-
-                sendMessageToClient(context, chatInfo, message, emoteToken, ws)
-            })();
-        } else {
-            (async () => {
-                let globalBadges = await getTwitchBadges()
-                let channelBadges = await getTwitchChannelBadges(context)
-                sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
-
-                let ffzEmotes = await getFFZGlobalEmotes()
-                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
-                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
-                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
-
-                let bttvEmotes = await getBTTVGlobalEmotes()
-                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
-                let bttvRoomEmotes = await getBTTVRoomEmotes(context)
-                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
-
-                console.log(emoteToken)
-
-                sendMessageToClient(context, chatInfo, message, emoteToken, ws)
-            })();
-        }
+        sendMessageEventToClient(message, channel, username, display, context, ws, usersWithoutColor, colorlessArray)
     })
 
     ws.on('message', (message) => {
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        channelsSent = ['snowman', 'pokimane', 'shroud', 'summerheroes']
+        channelsSent = ['snowman', 'xQcOW', 'shroud']
         channelsSent.forEach(function (e) {
             channels.push(e)
         })
@@ -472,8 +235,8 @@ function getTwitchEmotes(context, chatInfo) {
 
 function callAPI(url) {
     return fetch(url, {
-        method: 'GET'
-    })
+            method: 'GET'
+        })
         .then(response => response.json())
         .then(data => {
             return data
@@ -499,8 +262,7 @@ async function sortTwitchBadges(context, chatInfo, globalAPI, channelAPI) {
                 "id": badgeValues[i],
                 "url": null
             })
-        }
-        else if (globalBadges.includes(badgeTypes[i])) {
+        } else if (globalBadges.includes(badgeTypes[i])) {
             badgeToken.push({
                 "global": true,
                 "type": badgeTypes[i],
@@ -513,8 +275,7 @@ async function sortTwitchBadges(context, chatInfo, globalAPI, channelAPI) {
         if (badgeToken[i].global === true) {
             badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
             chatInfo.badges.push(badgeToken[i])
-        }
-        else if (badgeToken[i].global === false) {
+        } else if (badgeToken[i].global === false) {
             if (badgeToken[i].type === "bits") {
                 let lowestBitValue = Object.getOwnPropertyNames(channelAPI.badge_sets.bits.versions);
                 if (badgeToken[i].id <= lowestBitValue) {
@@ -599,7 +360,7 @@ function getCheers(cheers, message, chatInfo) {
         console.log(lowerMessage)
         console.log(lowerPrefix)
         let index = lowerMessage.lastIndexOf(lowerPrefix)
-        console.log("index: "+ index)
+        console.log("index: " + index)
         while (index != -1) {
             let name = lowerPrefix
             endingIndex = index + lowerPrefix.length
@@ -799,8 +560,7 @@ function sendMessageToClient(context, chatInfo, message, emoteToken, ws) {
             "text": message
         })
         ws.send(JSON.stringify(chatInfo))
-    }
-    else {
+    } else {
         let newToken = createMessageTokenForEmotes(chatInfo, message, emoteToken)
         ws.send(JSON.stringify(newToken))
     }
@@ -820,17 +580,213 @@ function isEndingCheer(character) {
 
 function callCheerAPI(url) {
     return fetch(url, {
-        method: 'GET',
-        headers: {
-            'Client-ID': clientID,
-            'Authorization': auth
-        },
-    })
+            method: 'GET',
+            headers: {
+                'Client-ID': clientID,
+                'Authorization': auth
+            },
+        })
         .then(response => response.json())
         .then(data => {
             // console.log('Success:', data);
             return data
         })
+}
+
+function sendMessageEventToClient(message, channel, username, display, context, ws, usersWithoutColor, colorlessArray) {
+    const chatInfo = {
+        event: "message",
+        channel: channel,
+        username: username,
+        display: display,
+        message: [],
+        color: context.color,
+        id: context['user-id'],
+        'message-id': context.id,
+        special: context['msg-id'],
+        emotes: [],
+        badges: [],
+        cheer: false,
+        ffz: false,
+        bttv: false
+    }
+
+    if (context.color === null) {
+        setColorForColorlessUsers(context, chatInfo, usersWithoutColor, colorlessArray)
+    }
+
+    let emoteToken = getTwitchEmotes(context, chatInfo, message);
+
+    if (context.badges === null) {
+        (async () => {
+            let ffzEmotes = await getFFZGlobalEmotes()
+            emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+            let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+            emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+            let bttvEmotes = await getBTTVGlobalEmotes()
+            emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+            let bttvRoomEmotes = await getBTTVRoomEmotes(context)
+            emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+            sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+        })();
+    } else {
+        (async () => {
+            let globalBadges = await getTwitchBadges()
+            let channelBadges = await getTwitchChannelBadges(context)
+            sortTwitchBadges(context, chatInfo, globalBadges, channelBadges)
+
+            let ffzEmotes = await getFFZGlobalEmotes()
+            emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+            let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+            emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+            let bttvEmotes = await getBTTVGlobalEmotes()
+            emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+            let bttvRoomEmotes = await getBTTVRoomEmotes(context)
+            emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+            console.log(emoteToken)
+
+            sendMessageToClient(context, chatInfo, message, emoteToken, ws)
+        })();
+    }
+}
+
+function sendSubEventToClient(subMessage, message, channel, displayName, display, userstate, ws, event, methods, usersWithoutColor, colorlessArray) {
+    const chatInfo = {
+        event: event,
+        prime: methods.prime,
+        channel: channel.slice(1),
+        username: displayName,
+        display: display,
+        message: [],
+        system: subMessage,
+        color: userstate.color,
+        id: userstate['user-id'],
+        'message-id': userstate.id,
+        emotes: [],
+        badges: [],
+        cheers: [],
+        ffz: false,
+        bttv: false
+    }
+
+    if (userstate.color === null) {
+        setColorForColorlessUsers(userstate, chatInfo, usersWithoutColor, colorlessArray)
+    }
+
+    let emoteToken = getTwitchEmotes(userstate, chatInfo, message);
+
+    if (userstate.badges === null) {
+        (async () => {
+            if (message !== null) {
+                let ffzEmotes = await getFFZGlobalEmotes()
+                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                let bttvEmotes = await getBTTVGlobalEmotes()
+                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+            } else {
+                sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+            }
+        })();
+    } else {
+        (async () => {
+            if (message !== null) {
+                let globalBadges = await getTwitchBadges()
+                let channelBadges = await getTwitchChannelBadges(userstate)
+                sortTwitchBadges(userstate, chatInfo, globalBadges, channelBadges)
+
+                let ffzEmotes = await getFFZGlobalEmotes()
+                emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+                let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+                emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+                let bttvEmotes = await getBTTVGlobalEmotes()
+                emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+                let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+                emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+                sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+            } else {
+                sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+            }
+        })();
+    }
+}
+
+function sendCheerEventToClient(message, cleanChannel, username, display, userstate, ws, usersWithoutColor, colorlessArray) {
+    const chatInfo = {
+        event: "message",
+        channel: cleanChannel,
+        username: username,
+        display: display,
+        message: [],
+        color: userstate.color,
+        id: userstate['user-id'],
+        'message-id': userstate.id,
+        special: userstate['msg-id'],
+        emotes: [],
+        badges: [],
+        cheer: false,
+        ffz: false,
+        bttv: false
+    }
+
+    if (userstate.color === null) {
+        setColorForColorlessUsers(userstate, chatInfo, usersWithoutColor, colorlessArray)
+    }
+
+    let emoteToken = getTwitchEmotes(userstate, chatInfo, message);
+
+    if (userstate.badges === null) {
+        (async () => {
+            let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + userstate['room-id']
+            let cheers = await callCheerAPI(url)
+            emoteToken = getCheers(cheers, message, chatInfo)
+
+            let ffzEmotes = await getFFZGlobalEmotes()
+            emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+            let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+            emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+            let bttvEmotes = await getBTTVGlobalEmotes()
+            emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+            let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+            emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+            sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+        })();
+    } else {
+        (async () => {
+            let url = "https://api.twitch.tv/v5/bits/actions/?channel_id=" + userstate['room-id']
+            let cheers = await callCheerAPI(url)
+            emoteToken = getCheers(cheers, message, chatInfo)
+
+            let globalBadges = await getTwitchBadges()
+            let channelBadges = await getTwitchChannelBadges(userstate)
+            sortTwitchBadges(userstate, chatInfo, globalBadges, channelBadges)
+
+            let ffzEmotes = await getFFZGlobalEmotes()
+            emoteToken = createFFZEmoteToken(ffzEmotes, message, chatInfo)
+            let ffzRoomEmotes = await getFFZRoomEmotes(channel)
+            emoteToken = createFFZEmoteToken(ffzRoomEmotes, message, chatInfo)
+
+            let bttvEmotes = await getBTTVGlobalEmotes()
+            emoteToken = createBTTVEmoteToken(bttvEmotes, message, chatInfo)
+            let bttvRoomEmotes = await getBTTVRoomEmotes(userstate)
+            emoteToken = createBTTVEmoteToken(bttvRoomEmotes, message, chatInfo)
+
+            sendMessageToClient(userstate, chatInfo, message, emoteToken, ws)
+        })();
+    }
 }
 
 // Thank you, Ege Özcan: https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value

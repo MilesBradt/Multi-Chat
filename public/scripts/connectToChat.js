@@ -116,8 +116,6 @@ function postHighlightedMessageToDom(token) {
     highlightEventDiv.className = "highlight-event"
     highlightEventDiv.innerHTML = "<span class='redeemed'>Redeemed </span>" + "<span class='highlight-my-message'>Highlight My Message </span><img class='points-icon' src='../images/points.png'></img>"
     highlightDiv.appendChild(highlightEventDiv)
-    
-
 
     let color = token.color + "50"
     highlightLine.style.backgroundColor = ca.process(color)
