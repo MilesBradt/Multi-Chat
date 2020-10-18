@@ -23,7 +23,7 @@ app.get('/', function (req, res) {
 });
 
 let test = ""
-let channelTest = ['snowman', 'summerheroes', 'sleepy']
+let channelTest = ['snowman', 'butterlord120', 'bluebob', 'carlosdaman']
 
 for (i in channelTest) {
     test += "/" + channelTest[i]
@@ -41,14 +41,14 @@ const wss = new WebSocket.Server({
 });
 
 wss.on('connection', (ws) => {
-    
+
     let channels = [];
     let usersWithoutColor = [];
     let colorlessArray = [];
     let apiInfo = [];
     let globalBadges;
-    
-        
+
+
     // Define configuration options
     const opts = {
         connection: {
@@ -172,14 +172,14 @@ wss.on('connection', (ws) => {
 
         sendMessageEventToClient(message, channel, username, display, context, ws, usersWithoutColor, colorlessArray, apiInfo, globalBadges)
     })
-    
+
     ws.on('message', (message) => {
         (async () => {
             //log the received message and send it back to the client
             console.log('received: %s', message);
 
             //channelsSent = message
-            channelsSent = ['snowman', 'emongg', 'xQcOW', 'pokimane']
+            channelsSent = ['snowman', 'butterlord120', 'bluebob', 'carlosdaman']
             channelsSent.forEach(function (e) {
                 channels.push(e)
             })
@@ -201,10 +201,10 @@ wss.on('connection', (ws) => {
             ws.send(`Hello, you sent -> ${message}`);
         })();
     });
-    
+
     //send immediatly a feedback to the incoming connection    
     ws.send('Hi there, I am a WebSocket server');
-    
+
 });
 
 // Called every time a message comes in
@@ -303,7 +303,7 @@ function sortTwitchGlobalBadges(context, chatInfo, channelAPI, globalAPI) {
         } else if (badgeToken[i].global === false) {
             if (badgeToken[i].type === "bits") {
                 let lowestBitValue = Object.getOwnPropertyNames(channelAPI.badge_sets.bits.versions);
-                if (badgeToken[i].id <= lowestBitValue) {
+                if (badgeToken[i].id < lowestBitValue) {
                     badgeToken[i].url = globalAPI.badge_sets[badgeToken[i].type].versions[badgeToken[i].id].image_url_1x
                     chatInfo.badges.push(badgeToken[i])
                 } else {
@@ -321,7 +321,7 @@ function sortTwitchGlobalBadges(context, chatInfo, channelAPI, globalAPI) {
 async function sortTwitchRoomBadges(context, chatInfo, channelAPI) {
     const channelBadges = Object.getOwnPropertyNames(channelAPI.badge_sets)
     let badgeTypes = Object.getOwnPropertyNames(context.badges)
-    
+
     let badgeValues = Object.values(context.badges)
     let badgeToken = [];
 
@@ -335,7 +335,7 @@ async function sortTwitchRoomBadges(context, chatInfo, channelAPI) {
             })
         }
     }
-    
+
     for (i in badgeToken) {
         if (badgeToken[i].type === "bits") {
             let lowestBitValue = Object.getOwnPropertyNames(channelAPI.badge_sets.bits.versions);
@@ -350,7 +350,7 @@ async function sortTwitchRoomBadges(context, chatInfo, channelAPI) {
             chatInfo.badges.push(badgeToken[i])
         }
     }
-    
+
 }
 
 async function getTwitchBadges(apiInfo) {
@@ -379,7 +379,7 @@ async function getFFZGlobalEmotes(apiInfo) {
     }
     apiInfo.push({
         "type": "ffz",
-        "emotes": ffzGlobalEmotes 
+        "emotes": ffzGlobalEmotes
     })
     return ffzGlobalEmotes
 }
@@ -393,8 +393,8 @@ async function getFFZRoomEmotes(channel, apiInfo) {
     }
     apiInfo.push({
         "channel": channel,
-         "type": "ffz-room",
-         "emotes": ffzEmotes 
+        "type": "ffz-room",
+        "emotes": ffzEmotes
     })
     return ffzEmotes
 }
@@ -426,7 +426,7 @@ async function getBTTVRoomEmotes(id, channel, apiInfo) {
     apiInfo.push({
         "channel": channel,
         "type": "bttv-room",
-        "emotes": bttvEmotes 
+        "emotes": bttvEmotes
     })
     return bttvEmotes
 }
@@ -754,7 +754,7 @@ function sendMessageEventToClient(message, channel, username, display, context, 
         apiInfo.forEach(e => {
             if ((e.type == "twitch-badges") && (e.channel == channel)) {
                 sortTwitchGlobalBadges(context, chatInfo, e.badges.room, globalBadges)
-            }  else if ((e.type == "ffz-room") && (e.channel == channel)) {
+            } else if ((e.type == "ffz-room") && (e.channel == channel)) {
                 emoteToken = createFFZRoomEmoteToken(e.emotes, message, chatInfo)
             } else if (e.type == "ffz") {
                 emoteToken = createFFZEmoteToken(e.emotes, message, chatInfo)

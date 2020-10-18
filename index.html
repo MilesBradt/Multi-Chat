@@ -40,20 +40,16 @@
 </head>
 
 <body>
-    <div class="container" id="chat-container">
-        
-        <div class="row">
-            <div class="column column-40 column-offset-25" id="chat" onmouseover="hoveringOverChat(true)"
+    <div id="chat-container">
+        <div id="chat-row">
+            <div id="chat" onmouseover="hoveringOverChat(true)"
                 onmouseleave="hoveringOverChat(false)">
-
             </div>
-            <div class="column column-60"></div>
-        </div>
-        <div id="button-div">
-            <button onclick="connectToChat(['snowman'])">Connect to chat</button>
+            <div id="button-div">
+                <button onclick="connectToChat(['snowman'])">Connect to chat</button>
+            </div>
         </div>
     </div>
 
 </body>
-
 </html>
