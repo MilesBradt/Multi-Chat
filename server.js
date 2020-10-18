@@ -179,7 +179,7 @@ wss.on('connection', (ws) => {
             console.log('received: %s', message);
 
             //channelsSent = message
-            channelsSent = ['snowman', 'butterlord120', 'bluebob', 'carlosdaman']
+            channelsSent = ['snowman', 'butterlord120', 'bluebob', 'CarlosDaMan']
             channelsSent.forEach(function (e) {
                 channels.push(e)
             })
@@ -739,6 +739,7 @@ function sendMessageEventToClient(message, channel, username, display, context, 
     let emoteToken = getTwitchEmotes(context, chatInfo, message);
 
     if (context.badges === null) {
+        console.log("it got here")
         apiInfo.forEach(e => {
             if ((e.type == "ffz-room") && (e.channel == channel)) {
                 emoteToken = createFFZRoomEmoteToken(e.emotes, message, chatInfo)
@@ -750,6 +751,7 @@ function sendMessageEventToClient(message, channel, username, display, context, 
                 emoteToken = createBTTVEmoteToken(e.emotes, message, chatInfo)
             }
         })
+        sendMessageToClient(context, chatInfo, message, emoteToken, ws)
     } else {
         apiInfo.forEach(e => {
             if ((e.type == "twitch-badges") && (e.channel == channel)) {
