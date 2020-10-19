@@ -1,5 +1,5 @@
 # Multi-Chat
 
-![img](https://i.imgur.com/Ok7ibHH.png)
+![img](https://i.imgur.com/5wTSOmT.jpg)
 
 I'll put more info in here soon!
