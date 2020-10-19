@@ -6,6 +6,7 @@
     <title>Sample Site</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- CSS Reset -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
     <!-- Milligram CSS -->
@@ -41,14 +42,21 @@
 
 <body>
     <div id="chat-container">
+        <div id="channel-row">
+            <div id="pop-out">
+                <i class="small material-icons">launch</i>
+            </div>
+        </div>
         <div id="chat-row">
             <div id="chat" onmouseover="hoveringOverChat(true)"
                 onmouseleave="hoveringOverChat(false)">
+                
             </div>
             <div id="button-div">
-                <button onclick="connectToChat(['snowman'])">Connect to chat</button>
+                <button onclick="connectToChat(['snowman'])">Connect</button>
             </div>
         </div>
+        
     </div>
 
 </body>

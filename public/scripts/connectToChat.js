@@ -17,7 +17,11 @@ function connectToChat(channel) {
     socket.addEventListener('message', function (event) {
         let token = JSON.parse(event.data)
         console.log(token)
-        if (token.special === 'highlighted-message') {
+        if(token.type === "avatars") {
+            console.log("it got here")
+            postAvatarsToDOM(token)
+        }
+        else if (token.special === 'highlighted-message') {
             createChannelLine(token)
             postHighlightedMessageToDom(token)
         }
@@ -72,6 +76,18 @@ function postToDOM(token, subDiv, highlightDiv) {
         chat.scrollTo(0, xH)
     }
 
+}
+
+function postAvatarsToDOM(token) {
+    const channelsDiv = document.getElementById("channel-row")
+    console.log(token)
+    for (i in token.channels) {
+        console.log(token.channels[i].url)
+        let channel = document.createElement("div")
+        channel.className = "channel-div"
+        channel.innerHTML = "<img class='channel-icon' src='" + token.channels[i].url + "'></img><a href='https://www.twitch.tv/"+ token.channels[i].channel + "' target='_blank' <span class='channel-names'>" + token.channels[i].channel + "</span></a>"
+        channelsDiv.appendChild(channel)
+    }
 }
 
 function postSubInfoToDom(token) {

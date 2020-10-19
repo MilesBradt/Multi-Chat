@@ -180,6 +180,10 @@ wss.on('connection', (ws) => {
 
             //channelsSent = message
             channelsSent = ['snowman', 'butterlord120', 'bluebob', 'CarlosDaMan']
+            let channelIcons = {
+                "type": "avatars",
+                "channels": []
+            };
             channelsSent.forEach(function (e) {
                 channels.push(e)
             })
@@ -187,6 +191,13 @@ wss.on('connection', (ws) => {
 
             for (i in opts.channels) {
                 let twitchAPI = await callTwitchAPI("https://api.twitch.tv/helix/search/channels?query=" + channels[i])
+                
+
+                console.log(twitchAPI.data[0])
+                channelIcons.channels.push({
+                    "url": twitchAPI.data[0].thumbnail_url,
+                    "channel": twitchAPI.data[0].display_name
+                })
 
                 await getTwitchChannelBadges(twitchAPI.data[0].id, twitchAPI.data[0].display_name, apiInfo)
                 await getFFZRoomEmotes(channels[i], apiInfo)
@@ -198,7 +209,7 @@ wss.on('connection', (ws) => {
             await getBTTVGlobalEmotes(apiInfo)
             console.log(apiInfo)
 
-            ws.send(`Hello, you sent -> ${message}`);
+            ws.send(JSON.stringify(channelIcons));
         })();
     });
 

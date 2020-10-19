@@ -1,11 +1,13 @@
-html, body { 
+html,
+body {
     height: 100%;
-    background-color:#18181b;
+    background-color: #18181b;
     font-family: 'Inter', sans-serif;
 }
 
-#button-div {
-    margin-left: 4em;
+#pop-out {
+    position: absolute;
+    bottom: 0;
 }
 
 button {
@@ -16,7 +18,8 @@ div {
     display: block;
 }
 
-.emotes, .cheer {
+.emotes,
+.cheer {
     margin: -.5rem 0;
     position: relative;
     vertical-align: middle;
@@ -24,16 +27,12 @@ div {
 
 #chat {
     float: right;
-    margin-right: 1rem;
     width: 34rem;
     min-width: 34rem;
     height: 100%;
     background-color: #0e0e10;
     overflow-y: auto;
     font-size: 13px;
-    border-style: solid;
-    border-color: #3d3d3d;
-    border-width: 0.1em;
     word-break: break-word;
     white-space: normal;
 }
@@ -42,13 +41,46 @@ div {
     height: 90%;
 }
 
+i {
+    color: #ffffff;
+}
+
+i:hover {
+    color: #9147ff;
+    cursor: pointer;
+}
+
+.button-div{
+    float: left;
+}
+
+.channel-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    margin: 1rem;
+}
+
 #chat-row {
     text-overflow: ellipsis;
     overflow: hidden;
     height: 100%
 }
 
-.badges, .sub-badges {
+#channel-row {
+    float: right;
+    width: 20rem;
+    min-width: 20rem;
+    height: 100%;
+    align-items: center;
+    margin-right: 2rem;
+    border-style: solid;
+    border-color: #3d3d3d;
+    border-width: 0.1em;
+}
+
+.badges,
+.sub-badges {
     padding-left: 0.3em;
     padding-right: 0.3em;
     position: relative;
@@ -79,7 +111,7 @@ div {
 }
 
 .channelLines {
-    color:  #b3b3b3;
+    color: #b3b3b3;
     border-left: 0.3em solid #9147ff;
     margin-left: 0.5em;
     margin-bottom: 0.3em;
@@ -87,13 +119,16 @@ div {
     padding-left: 0.3em;
 }
 
-.sub, .resub, .highlighted-message {
+.sub,
+.resub,
+.highlighted-message {
     margin-left: -0.75em;
     padding-left: 0.5em;
     padding-bottom: 0.3em;
 }
 
-.sub-div, .highlight-event {
+.sub-div,
+.highlight-event {
     padding-left: 0.3em;
 }
 
@@ -102,7 +137,22 @@ div {
     color: #ffffff;
 }
 
-.sub-message, .redeemed {
+.channel-names {
+    color: #ffffff;
+}
+
+.channel-names:hover {
+    color: #9147ff
+}
+
+.channel-div {
+    display: flex;
+    align-items: center;
+    word-break: break-word;
+}
+
+.sub-message,
+.redeemed {
     color: #b3b3b3;
 }
 
@@ -122,7 +172,7 @@ div {
 }
 
 #chat-container {
-    padding-top: 1em; 
+    padding-top: 1em;
     height: 95%;
 }
 
