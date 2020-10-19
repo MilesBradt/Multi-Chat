@@ -18,7 +18,6 @@ function connectToChat(channel) {
         let token = JSON.parse(event.data)
         console.log(token)
         if(token.type === "avatars") {
-            console.log("it got here")
             postAvatarsToDOM(token)
         }
         else if (token.special === 'highlighted-message') {

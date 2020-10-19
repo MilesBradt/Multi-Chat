@@ -42,22 +42,29 @@
 
 <body>
     <div id="chat-container">
-        <div id="channel-row">
-            <div id="pop-out">
-                <i class="small material-icons">launch</i>
+        <div class="row">
+            <div class="column" id="streams-row">
+                <div>
+                    <p>Embedded streams coming soon...</p>
+                </div>
+            </div>
+            <div class="column" id="chat-row">
+
+                <div id="chat" onmouseover="hoveringOverChat(true)" onmouseleave="hoveringOverChat(false)">
+                </div>
+
+            </div>
+            <div class="column" id="channel-row">
+                <div id="pop-out">
+                    <i class="small material-icons">launch</i>
+                </div>
+                <div id="button-div">
+                    <button onclick="connectToChat(['snowman'])">Connect</button>
+                </div>
             </div>
         </div>
-        <div id="chat-row">
-            <div id="chat" onmouseover="hoveringOverChat(true)"
-                onmouseleave="hoveringOverChat(false)">
-                
-            </div>
-            <div id="button-div">
-                <button onclick="connectToChat(['snowman'])">Connect</button>
-            </div>
-        </div>
-        
     </div>
 
 </body>
+
 </html>

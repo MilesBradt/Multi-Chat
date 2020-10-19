@@ -179,7 +179,7 @@ wss.on('connection', (ws) => {
             console.log('received: %s', message);
 
             //channelsSent = message
-            channelsSent = ['snowman', 'butterlord120', 'bluebob', 'CarlosDaMan']
+            channelsSent = ['snowman', '360Chrism', 'Zfg1', 'Simply']
             let channelIcons = {
                 "type": "avatars",
                 "channels": []
