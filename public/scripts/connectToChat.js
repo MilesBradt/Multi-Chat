@@ -1,41 +1,44 @@
-function connectToChat(channel) {
+function connectToChat(channels) {
+    
     // Create WebSocket connection.
     // const socket = new WebSocket('ws://localhost:8080');
 
-    var socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws");
+    const socket = new WebSocket('ws://localhost:8080');
+
     let hovering = false;
 
     // Connection opened
     socket.addEventListener('open', function (event) {
         console.log('Connected to WS Server')
-        socket.send(channel)
+        socket.send(channels)
         ca = new Color.Adjuster;
         notOverChat()
     });
 
     // Listen for messages
     socket.addEventListener('message', function (event) {
-        let token = JSON.parse(event.data)
-        console.log(token)
-        if(token.type === "avatars") {
-            postAvatarsToDOM(token)
-        }
-        else if (token.special === 'highlighted-message') {
-            createChannelLine(token)
-            postHighlightedMessageToDom(token)
-        }
-        else if (token.event === "message") {
-            createChannelLine(token)
-            postToDOM(token)
-        } else if (token.event === "resub" || token.event === 'sub') {
-            createChannelLine(token)
-            postSubInfoToDom(token)
-        }
-        else if (token.event === "timeout" || token.event === "ban") {
-            handleTimeout(token)
-        }
-        else if (token.event === "delete") {
-            handleDeletedMessage(token)
+        console.log(event.data)
+        if (event.data === "error") {
+            console.log("channel doesn't exist")
+        } else {
+            let token = JSON.parse(event.data)
+            console.log(token)
+            if (token.type === "avatars") {
+                postAvatarsToDOM(token)
+            } else if (token.special === 'highlighted-message') {
+                createChannelLine(token)
+                postHighlightedMessageToDom(token)
+            } else if (token.event === "message") {
+                createChannelLine(token)
+                postToDOM(token)
+            } else if (token.event === "resub" || token.event === 'sub') {
+                createChannelLine(token)
+                postSubInfoToDom(token)
+            } else if (token.event === "timeout" || token.event === "ban") {
+                handleTimeout(token)
+            } else if (token.event === "delete") {
+                handleDeletedMessage(token)
+            }
         }
     });
 
@@ -84,7 +87,7 @@ function postAvatarsToDOM(token) {
         console.log(token.channels[i].url)
         let channel = document.createElement("div")
         channel.className = "channel-div"
-        channel.innerHTML = "<img class='channel-icon' src='" + token.channels[i].url + "'></img><a href='https://www.twitch.tv/"+ token.channels[i].channel + "' target='_blank' <span class='channel-names'>" + token.channels[i].channel + "</span></a>"
+        channel.innerHTML = "<img class='channel-icon' src='" + token.channels[i].url + "'></img><a href='https://www.twitch.tv/" + token.channels[i].channel + "' target='_blank' <span class='channel-names'>" + token.channels[i].channel + "</span></a>"
         channelsDiv.appendChild(channel)
     }
 }
@@ -144,12 +147,11 @@ function createChatLine(token, subDiv, highlightDiv) {
     chatLine.id = "chatLine"
     chatLine.className = "chatLines"
 
-    if(token.special === 'highlighted-message') {
+    if (token.special === 'highlighted-message') {
         highlightDiv.appendChild(chatLine)
         highlightDiv.style.paddingBottom = "0.3em";
         return chatLine
-    }
-    else if (token.evet === "sub" || token.event === "resub") {
+    } else if (token.evet === "sub" || token.event === "resub") {
         subDiv.appendChild(chatLine)
         chatLine.style.paddingBottom = "0.3em";
         return chatLine
@@ -221,16 +223,43 @@ function postTwitchEmotes(token, messagesArray) {
     for (const i in messages) {
         if (messages[i].type === "emote") {
             console.log(messages[i])
-            if(messages[i].event === "cheer") {
+            if (messages[i].event === "cheer") {
                 messagesArray.push("<img class='cheer' src=" + messages[i].url + ">  </img>" + " " + "<span class='cheer' style='color: " + messages[i].color + "; font-weight: bold;'>" + messages[i].amount + "</span>")
             } else {
                 messagesArray.push("<img class='emotes' src=" + messages[i].url + ">  </img>")
             }
         }
-        
+
         if (messages[i].type === "text") {
             messagesArray.push(messages[i].text)
         }
     }
 }
 
+document.addEventListener("DOMContentLoaded", function (event) {
+    let channels = [];
+    var form = document.getElementById("myForm");
+    let connect = document.getElementById("connectButton");
+    console.log(form)
+    console.log(connect)
+    form.addEventListener('submit', handleForm);
+    connect.addEventListener('click', handleConnect);
+
+    function handleForm(event) {
+        event.preventDefault();
+        channels.push(event.target.addStream.value)
+        console.log(channels)
+        connectToChat(channels)
+        event.target.addStream.value='';
+        channels = [];
+    }
+
+    function handleConnect(event) {
+        event.preventDefault();
+        console.log("It worked")
+        document.getElementById("temp-list").className = "fade-out"
+        connectToChat(channels)
+        
+    }
+    
+});

@@ -55,11 +55,23 @@
 
             </div>
             <div class="column" id="channel-row">
+                
+                <div id="temp-channels">
+                    <ul id="temp-list">
+
+                    </ul>
+                </div>
                 <div id="pop-out">
                     <i class="small material-icons">launch</i>
                 </div>
                 <div id="button-div">
-                    <button onclick="connectToChat(['snowman'])">Connect</button>
+                    <form name="test" id="myForm">
+                        <fieldset>
+                            <input id="stream-submit" type="text" name="addStream" placeholder="add stream..."
+                                id="nameField" autofocus>
+                            <input class="button-primary" type="submit" value="Add">
+                        </fieldset>
+                    </form>
                 </div>
             </div>
         </div>

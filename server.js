@@ -22,10 +22,10 @@ app.get('/', function (req, res) {
     res.sendFile(path.join(__dirname + '/index.html'));
 });
 
-let test = ""
-let channelTest = ['snowman', 'butterlord120', 'bluebob', 'carlosdaman']
+let test = "/"
+let globalChannelList = [];
 
-for (i in channelTest) {
+for (i in globalChannelList) {
     test += "/" + channelTest[i]
 }
 
@@ -42,7 +42,6 @@ const wss = new WebSocket.Server({
 
 wss.on('connection', (ws) => {
 
-    let channels = [];
     let usersWithoutColor = [];
     let colorlessArray = [];
     let apiInfo = [];
@@ -55,7 +54,7 @@ wss.on('connection', (ws) => {
             secure: true,
             reconnect: true
         },
-        channels: channels
+        channels: []
     };
 
     // Create a client with Twitch options
@@ -178,39 +177,57 @@ wss.on('connection', (ws) => {
             //log the received message and send it back to the client
             console.log('received: %s', message);
 
-            //channelsSent = message
-            channelsSent = ['snowman', '360Chrism', 'Zfg1', 'Simply']
+            let channelsSent = message.split(", ")
+
+            console.log(channelsSent)
+
+            console.log(message)
             let channelIcons = {
                 "type": "avatars",
                 "channels": []
             };
-            channelsSent.forEach(function (e) {
-                channels.push(e)
-            })
+
             console.log(opts.channels)
+            channelsSent.forEach(function (e) {
+                console.log(e)
+                console.log(globalChannelList.includes(e.toLowerCase()))
+                opts.channels.push(e.toLowerCase())
+            })
 
-            for (i in opts.channels) {
-                let twitchAPI = await callTwitchAPI("https://api.twitch.tv/helix/search/channels?query=" + channels[i])
-                
+            console.log(opts.channels)
+            try {
+                for (i in opts.channels) {
 
-                console.log(twitchAPI.data[0])
-                channelIcons.channels.push({
-                    "url": twitchAPI.data[0].thumbnail_url,
-                    "channel": twitchAPI.data[0].display_name
-                })
+                    let twitchAPI = await callTwitchAPI("https://api.twitch.tv/helix/search/channels?query=" + opts.channels[i])
 
-                await getTwitchChannelBadges(twitchAPI.data[0].id, twitchAPI.data[0].display_name, apiInfo)
-                await getFFZRoomEmotes(channels[i], apiInfo)
-                await getBTTVRoomEmotes(twitchAPI.data[0].id, twitchAPI.data[0].display_name, apiInfo)
+                    console.log(twitchAPI.data[0])
+                    console.log(opts.channels.includes(opts.channels[i]))
+                    if ((twitchAPI.data[0].display_name === opts.channels[i])) {
+                        channelIcons.channels.push({
+                            "url": twitchAPI.data[0].thumbnail_url,
+                            "channel": twitchAPI.data[0].display_name
+                        })
+
+                        await getTwitchChannelBadges(twitchAPI.data[0].id, twitchAPI.data[0].display_name, apiInfo)
+                        await getFFZRoomEmotes(opts.channels[i], apiInfo)
+                        await getBTTVRoomEmotes(twitchAPI.data[0].id, twitchAPI.data[0].display_name, apiInfo)
+                    } else {
+                        ws.send("error")
+                    }
+
+                }
+
+                globalBadges = await getTwitchBadges(apiInfo)
+                await getFFZGlobalEmotes(apiInfo)
+                await getBTTVGlobalEmotes(apiInfo)
+                console.log(apiInfo)
+
+                ws.send(JSON.stringify(channelIcons));
+            } catch (err) {
+                console.error(err)
+                ws.send("error")
             }
-
-            globalBadges = await getTwitchBadges(apiInfo)
-            await getFFZGlobalEmotes(apiInfo)
-            await getBTTVGlobalEmotes(apiInfo)
-            console.log(apiInfo)
-
-            ws.send(JSON.stringify(channelIcons));
-        })();
+            })();
     });
 
     //send immediatly a feedback to the incoming connection    
